@@ -13,11 +13,15 @@ export class SigninScreenModel {
             console.log('Values in signin: ', values);
 
             /**
-             * @todo: Implement logic here to login user after
+             * @todo: Implement Auth logic here to login user after
              * saving details.
              */
-            // Auth
-            // handleButtonNavigation(navigation, 'App', 'Home', params)
+            const params = {
+                useremail: values.useremail,
+                userfname: 'John',
+                userlname: 'Doe',
+            };
+            handleButtonNavigation(navigation, 'App', 'Home', params);
         } catch (error) {
             console.error(
                 'Error occurred while signing up user: ',

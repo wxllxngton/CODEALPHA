@@ -13,24 +13,21 @@ import {
     Platform,
 } from 'react-native';
 import * as Linking from 'expo-linking';
-import FAQComp from '../components/FAQComp';
-import QuestionComp from '../components/QuestionComp';
-import { colors } from '../utils/config';
 
 // Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
-    faArrowCircleLeft,
-    faArrowLeftRotate,
     faChevronLeft,
-    faHome,
     faQuestionCircle,
-    faTentArrowTurnLeft,
 } from '@fortawesome/free-solid-svg-icons';
 
 // Components
+import FAQComp from '../components/FAQComp';
 import HeaderComp from '../components/HeaderComp';
 import BackgroundAnimation from '../components/AnimatedBGComp';
+
+// Utils
+import { colors } from '../utils/config';
 
 const domain = `https://google.com`;
 

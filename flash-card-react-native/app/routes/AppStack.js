@@ -60,7 +60,7 @@ function AppContainer() {
     return (
         <NavigationContainer>
             <Stack.Navigator
-                initialRouteName="Auth"
+                initialRouteName="App"
                 screenOptions={{ headerShown: false }}
             >
                 <Stack.Screen name="Auth" component={AuthStackComp} />

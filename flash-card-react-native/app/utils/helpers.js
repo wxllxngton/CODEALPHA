@@ -53,3 +53,18 @@ export const toTitleCase = function (value) {
         );
     }
 };
+
+export const getRandomColor = () => {
+    const colors = [
+        '#FFCCCB',
+        '#ADD8E6',
+        '#90EE90',
+        '#FFFFE0',
+        '#E6E6FA',
+        '#FFC0CB',
+        '#E0FFFF',
+        '#D8BFD8',
+    ];
+
+    return colors[Math.floor(Math.random() * colors.length)];
+};
