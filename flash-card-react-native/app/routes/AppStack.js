@@ -2,7 +2,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import {
     LandingScreen,
     HomeScreen,
-    StudyScreen,
+    FlashcardScreen,
     SignupScreen,
     SigninScreen,
     FAQComp,
@@ -48,7 +48,7 @@ const AppStackComp = () => {
     return (
         <AppStack.Navigator id="App" screenOptions={{ headerShown: false }}>
             <AppStack.Screen name="Home" component={HomeScreen} />
-            <AppStack.Screen name="Study" component={StudyScreen} />
+            <AppStack.Screen name="Flashcard" component={FlashcardScreen} />
         </AppStack.Navigator>
     );
 };

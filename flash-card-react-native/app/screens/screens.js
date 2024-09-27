@@ -1,5 +1,5 @@
 import HomeScreen from './HomeScreen';
-import StudyScreen from './StudyScreen';
+import FlashcardScreen from './FlashcardScreen';
 import LandingScreen from './LandingScreen';
 import SignupScreen from './SignupScreen';
 import SigninScreen from './SigninScreen';
@@ -7,7 +7,7 @@ import FAQScreen from './FAQScreen';
 
 export {
     HomeScreen,
-    StudyScreen,
+    FlashcardScreen,
     LandingScreen,
     SignupScreen,
     SigninScreen,

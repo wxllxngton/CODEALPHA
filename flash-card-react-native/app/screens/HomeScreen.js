@@ -33,7 +33,7 @@ import BackgroundAnimation from '../components/AnimatedBGComp';
 
 // Utils
 import { colors } from '../utils/config';
-import { getRandomColor } from '../utils/helpers';
+import { getRandomColor, handleButtonNavigation } from '../utils/helpers';
 import SearchBarComp from '../components/SearchbarComp';
 
 /**
@@ -110,6 +110,9 @@ function HomeScreen({ navigation }) {
             <TouchableOpacity
                 key={set.id}
                 style={[styles.card, { backgroundColor: set.color }]}
+                onPress={() =>
+                    handleButtonNavigation(navigation, 'App', 'Flashcard')
+                }
             >
                 <Text style={styles.cardTitle}>{set.title}</Text>
                 <Text style={styles.cardCount}>{set.cardCount} cards</Text>
