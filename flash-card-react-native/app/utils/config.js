@@ -8,6 +8,7 @@ export const colors = {
     complementaryBlack: '#000303',
     white: '#efffff',
     red: '#FF2828',
+    green: 'green',
     gray: '#B4B4B4',
     backgroundColor: (mode) => {
         if (mode === 'light') return colors.white;

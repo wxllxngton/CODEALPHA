@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -12,20 +12,32 @@ import {
     ScrollView,
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
+    Pressable,
 } from 'react-native';
+import Swiper from 'react-native-swiper';
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withSpring,
+} from 'react-native-reanimated';
 
 // Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faEdit, faLightbulb } from '@fortawesome/free-solid-svg-icons';
+import {
+    faAdd,
+    faCheck,
+    faEdit,
+    faLightbulb,
+    faX,
+} from '@fortawesome/free-solid-svg-icons';
 
-// Form & Validation
+// Forms and validation
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 
 // Components
 import HeaderComp from '../components/HeaderComp';
 import BackgroundAnimation from '../components/AnimatedBGComp';
-import FlipCardComp from '../components/FlipCardComp';
 
 // Utils
 import { colors } from '../utils/config';
@@ -36,20 +48,12 @@ const FlashcardSchema = Yup.object().shape({
     answer: Yup.string().required('Enter answer'),
 });
 
-/**
- * FlashcardScreen Component
- *
- * This component renders a flashcard form that allows users to create an account.
- * It uses Formik for form handling and validation, and it also includes a flashcard feature
- * that allows users to flip through questions and answers.
- *
- * @param {object} navigation - The navigation object for screen transitions.
- * @returns {JSX.Element} - The FlashcardScreen component.
- */
 function FlashcardScreen({ navigation }) {
     const [isFlipped, setIsFlipped] = useState(false);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
+    const [isAdding, setIsAdding] = useState(false);
+    const [score, setScore] = useState(0);
     const [flashcards, setFlashcards] = useState([
         { question: 'What is the capital of France?', answer: 'Paris' },
         { question: 'What is 2 + 2?', answer: '4' },
@@ -58,80 +62,93 @@ function FlashcardScreen({ navigation }) {
             answer: 'William Shakespeare',
         },
     ]);
+    const flip = useSharedValue(0); // shared value for animation state
 
-    /**
-     * Toggles the flip state of the flashcard.
-     */
     const handleFlip = () => {
-        if (!isEditing) {
-            setIsFlipped(!isFlipped);
-        }
+        // Trigger flip animation
+        setIsFlipped((prev) => !prev);
+        flip.value = withSpring(isFlipped ? 0 : 1);
     };
 
-    /**
-     * Moves to the next flashcard.
-     */
-    const handleNext = () => {
-        setIsFlipped(false);
-        setCurrentCardIndex((prevIndex) => (prevIndex + 1) % flashcards.length);
-    };
+    // Animated styles for flipping the card
+    const frontAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ rotateY: `${flip.value * 180}deg` }],
+            backfaceVisibility: 'hidden',
+        };
+    });
 
-    /**
-     * Moves to the previous flashcard.
-     */
-    const handlePrevious = () => {
-        setIsFlipped(false);
-        setCurrentCardIndex(
-            (prevIndex) =>
-                (prevIndex - 1 + flashcards.length) % flashcards.length
-        );
-    };
+    const backAnimatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ rotateY: `${flip.value * 180 + 180}deg` }],
+            backfaceVisibility: 'hidden',
+        };
+    });
 
-    /**
-     * Enables editing mode for the current flashcard.
-     */
     const handleEdit = () => {
         setIsEditing(true);
+        setIsAdding(false); // Ensure that "Add" mode is off when editing
     };
 
-    /**
-     * Saves the changes made to the current flashcard.
-     *
-     * @param {object} values - The updated question and answer.
-     */
+    const handleAdd = () => {
+        setIsAdding(true);
+        setIsEditing(false); // Ensure that "Edit" mode is off when adding
+    };
+
+    const handleScore = (operation) => {
+        if (operation === 'add')
+            setScore((prevScore) => {
+                const totalPossibleScore = flashcards.length * 10;
+                if (prevScore === totalPossibleScore) return prevScore;
+                return (prevScore += 10);
+            });
+        if (operation === 'subtract')
+            setScore((prevScore) => {
+                if (parseInt(prevScore) === 0) return prevScore;
+                return (prevScore -= 10);
+            });
+    };
+
     const handleSave = (values) => {
-        const updatedFlashcards = [...flashcards];
-        updatedFlashcards[currentCardIndex] = values;
-        setFlashcards(updatedFlashcards);
-        setIsEditing(false);
+        if (isAdding) {
+            // Add a new flashcard
+            setFlashcards([...flashcards, values]);
+            setIsAdding(false);
+        } else if (isEditing) {
+            // Update an existing flashcard
+            const updatedFlashcards = [...flashcards];
+            updatedFlashcards[currentCardIndex] = values;
+            setFlashcards(updatedFlashcards);
+            setIsEditing(false);
+        }
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <BackgroundAnimation />
-            {/* Header Component */}
             <HeaderComp
                 icon={faLightbulb}
                 heading={'Flashcard set name'}
                 navigation={navigation}
             />
-
-            {/* Dismiss keyboard on outside touch */}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAvoidingView
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
                     <ScrollView contentContainerStyle={styles.scrollView}>
-                        {isEditing ? (
+                        {isEditing || isAdding ? (
                             <View style={styles.formWrapper}>
                                 <Formik
                                     initialValues={{
-                                        question:
-                                            flashcards[currentCardIndex]
-                                                .question,
-                                        answer: flashcards[currentCardIndex]
-                                            .answer,
+                                        question: isAdding
+                                            ? ''
+                                            : flashcards[currentCardIndex]
+                                                  .question,
+                                        answer: isAdding
+                                            ? ''
+                                            : flashcards[currentCardIndex]
+                                                  .answer,
                                     }}
                                     validationSchema={FlashcardSchema}
                                     onSubmit={handleSave}
@@ -145,14 +162,13 @@ function FlashcardScreen({ navigation }) {
                                         setFieldTouched,
                                     }) => (
                                         <View style={styles.formContainer}>
-                                            <Text
-                                                style={styles.appTitle}
-                                                onPress={handleEdit}
-                                            >
-                                                Edit
+                                            <Text style={styles.appTitle}>
+                                                {isAdding ? 'Add' : 'Edit'}
                                             </Text>
                                             <Text style={styles.title}>
-                                                Kindly update flashcard details.
+                                                {isAdding
+                                                    ? 'Kindly add a new flashcard.'
+                                                    : 'Update flashcard details.'}
                                             </Text>
 
                                             {/* Question Input */}
@@ -187,7 +203,7 @@ function FlashcardScreen({ navigation }) {
                                                     )}
                                             </View>
 
-                                            {/* ANSWER Input */}
+                                            {/* Answer Input */}
                                             <View style={styles.inputWrapper}>
                                                 <TextInput
                                                     style={styles.inputStyle}
@@ -230,9 +246,10 @@ function FlashcardScreen({ navigation }) {
                                                 </Text>
                                             </TouchableOpacity>
                                             <TouchableOpacity
-                                                onPress={() =>
-                                                    setIsEditing(false)
-                                                }
+                                                onPress={() => {
+                                                    setIsEditing(false);
+                                                    setIsAdding(false);
+                                                }}
                                                 style={styles.backBtn}
                                             >
                                                 <Text
@@ -246,19 +263,57 @@ function FlashcardScreen({ navigation }) {
                                 </Formik>
                             </View>
                         ) : (
-                            <TouchableOpacity
-                                onPress={() => setIsFlipped(!isFlipped)}
+                            <Swiper
+                                style={styles.swiperWrapper}
+                                showsButtons={true}
+                                index={currentCardIndex}
                             >
-                                <FlipCardComp
-                                    question={
-                                        flashcards[currentCardIndex].question
-                                    }
-                                    answer={flashcards[currentCardIndex].answer}
-                                    isFlipped={isFlipped}
-                                />
-                            </TouchableOpacity>
+                                {flashcards.map((item, index) => (
+                                    <Pressable
+                                        key={index}
+                                        style={styles.flashcardContainer}
+                                        onPress={handleFlip}
+                                    >
+                                        {/* Front Face */}
+                                        <Animated.View
+                                            style={[
+                                                styles.card,
+                                                frontAnimatedStyle,
+                                            ]}
+                                        >
+                                            <Text style={styles.cardText}>
+                                                {item.question}
+                                            </Text>
+                                        </Animated.View>
+
+                                        {/* Back Face */}
+                                        <Animated.View
+                                            style={[
+                                                styles.card,
+                                                styles.cardBack,
+                                                backAnimatedStyle,
+                                            ]}
+                                        >
+                                            <Text style={styles.cardText}>
+                                                {item.answer}
+                                            </Text>
+                                        </Animated.View>
+                                    </Pressable>
+                                ))}
+                            </Swiper>
                         )}
-                        {!isEditing ? (
+                        {/* Show score only when not editing/adding */}
+                        {!isEditing && !isAdding ? (
+                            <View>
+                                <Text
+                                    style={{ color: colors.textColor('dark') }}
+                                >
+                                    {'score: '.toUpperCase()} {score}
+                                </Text>
+                            </View>
+                        ) : null}
+                        {/* Show buttons only when not editing/adding */}
+                        {!isEditing && !isAdding ? (
                             <TouchableOpacity
                                 onPress={handleEdit}
                                 style={styles.editButton}
@@ -270,19 +325,39 @@ function FlashcardScreen({ navigation }) {
                                 />
                             </TouchableOpacity>
                         ) : null}
-                        {!isEditing ? (
-                            <View style={styles.navigation}>
+                        {!isEditing && !isAdding ? (
+                            <TouchableOpacity
+                                onPress={handleAdd}
+                                style={styles.addButton}
+                            >
+                                <FontAwesomeIcon
+                                    icon={faAdd}
+                                    size={20}
+                                    color={colors.textColor('light')}
+                                />
+                            </TouchableOpacity>
+                        ) : null}
+                        {!isEditing && !isAdding ? (
+                            <View style={styles.mark}>
                                 <TouchableOpacity
-                                    style={styles.navButton}
-                                    onPress={handlePrevious}
+                                    style={[styles.navButton, styles.markWrong]}
+                                    onPress={() => handleScore('subtract')}
                                 >
-                                    <Text>Previous</Text>
+                                    <FontAwesomeIcon
+                                        icon={faX}
+                                        color={colors.textColor('dark')}
+                                        size={20}
+                                    />
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={styles.navButton}
-                                    onPress={handleNext}
+                                    style={[styles.navButton, styles.markRight]}
+                                    onPress={() => handleScore('add')}
                                 >
-                                    <Text>Next</Text>
+                                    <FontAwesomeIcon
+                                        icon={faCheck}
+                                        color={colors.textColor('dark')}
+                                        size={20}
+                                    />
                                 </TouchableOpacity>
                             </View>
                         ) : null}
@@ -308,10 +383,18 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     formWrapper: {
-        width: '90%',
+        width: 300,
         backgroundColor: colors.backgroundColor('dark'),
         padding: 20,
         borderRadius: 20,
+    },
+    swiperWrapper: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    flashcardContainer: {
+        top: 185,
+        alignItems: 'center',
     },
     formContainer: {
         width: '100%',
@@ -370,50 +453,52 @@ const styles = StyleSheet.create({
         color: colors.textColor('light'),
         fontWeight: 'bold',
     },
-    flashcard: {
-        width: '90%',
-        height: 200,
+
+    card: {
+        width: 300,
+        height: 300,
+        backgroundColor: colors.primary,
         borderRadius: 20,
-        overflow: 'hidden',
-        transformStyle: 'preserve-3d',
-        transition: 'transform 0.6s',
-    },
-    flipped: {
-        transform: [{ rotateY: '180deg' }],
-    },
-    cardFace: {
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        backfaceVisibility: 'hidden',
         justifyContent: 'center',
         alignItems: 'center',
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        padding: 20,
-        borderRadius: 20,
-    },
-    cardFront: {
-        backgroundColor: colors.backgroundColor('light'),
-        color: colors.primary,
+        backfaceVisibility: 'hidden',
     },
     cardBack: {
-        backgroundColor: colors.primary,
-        color: colors.backgroundColor('light'),
+        position: 'absolute',
+        top: 0,
+        backgroundColor: colors.secondary,
         transform: [{ rotateY: '180deg' }],
     },
-    navigation: {
+    cardText: {
+        fontSize: 18,
+        color: colors.textColor('dark'),
+    },
+    mark: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '90%',
         marginTop: 20,
     },
     navButton: {
-        backgroundColor: colors.primary,
         padding: 10,
         borderRadius: 20,
+        paddingVertical: 15,
         width: '48%',
+        alignItems: 'center',
+    },
+    markRight: {
+        backgroundColor: colors.green,
+    },
+    markWrong: {
+        backgroundColor: colors.red,
+    },
+    addButton: {
+        position: 'absolute',
+        top: 20,
+        right: 75,
+        backgroundColor: colors.secondary,
+        padding: 10,
+        borderRadius: 20,
         alignItems: 'center',
     },
     editButton: {
