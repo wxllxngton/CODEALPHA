@@ -90,9 +90,13 @@ function LandingScreen({ navigation }) {
 
                 {/* Horizontal Rule with "or" */}
                 <View style={styles.horizontalRuleContainer}>
-                    <View style={styles.horizontalLine} />
+                    <View
+                        style={[styles.horizontalLine, { marginLeft: 'auto' }]}
+                    />
                     <Text style={styles.orText}>or</Text>
-                    <View style={styles.horizontalLine} />
+                    <View
+                        style={[styles.horizontalLine, { marginRight: 'auto' }]}
+                    />
                 </View>
 
                 <TouchableHighlight
@@ -182,7 +186,7 @@ const styles = StyleSheet.create({
         marginVertical: 15,
     },
     horizontalLine: {
-        flex: 1,
+        width: '35%',
         height: 1,
         backgroundColor: colors.textColor('dark'),
     },

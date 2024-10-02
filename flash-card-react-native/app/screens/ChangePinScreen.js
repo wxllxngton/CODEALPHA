@@ -21,10 +21,9 @@ import {
     faPerson,
     faQuestion,
     faSign,
-    faSignup,
+    faChangePin,
     faStickyNote,
 } from '@fortawesome/free-solid-svg-icons';
-import Toast from 'react-native-toast-message';
 
 // Form & Validation
 import { Formik } from 'formik';
@@ -36,49 +35,49 @@ import BackgroundAnimation from '../components/AnimatedBGComp';
 import LoaderComp from '../components/LoaderComp';
 
 // Utils
-import { handleButtonNavigation, showToast } from '../utils/helpers';
+import { handleButtonNavigation } from '../utils/helpers';
 import { colors } from '../utils/config';
-import { SignupScreenController } from '../controllers/SignupScreenController';
+// import { ChangePinScreenController } from '../controllers/ChangePinScreenController';
 
-// Validation schema for signup form
-const SignupSchema = Yup.object().shape({
-    userfname: Yup.string()
-        .matches(/^[a-zA-Z]+$/, 'Name is not in correct format')
-        .max(50, 'Too Long!')
-        .required('Enter first name'),
-    userlname: Yup.string()
-        .matches(/^[a-zA-Z]+$/, 'Name is not in correct format')
-        .max(50, 'Too Long!')
-        .required('Enter last name'),
-    useremail: Yup.string().email('Invalid email').required('Enter email'),
-    pin: Yup.string()
-        .required('Enter PIN')
+// Validation schema for changePin form
+const ChangePinSchema = Yup.object().shape({
+    currentPin: Yup.string()
+        .required('Enter your current PIN')
         .matches(/^[0-9]+$/, 'PIN must be numeric')
         .min(4, 'PIN must be at least 4 characters')
         .max(4, 'PIN must be max 4 characters'),
-    confirmPin: Yup.string()
+    newPin: Yup.string()
+        .required('Enter your new PIN')
+        .matches(/^[0-9]+$/, 'New PIN must be numeric')
+        .min(4, 'PIN must be at least 4 characters')
+        .max(4, 'PIN must be max 4 characters')
+        .notOneOf(
+            [Yup.ref('currentPin')],
+            'New PIN must not be the same as the current PIN'
+        ), // Custom validation
+    confirmNewPin: Yup.string()
         .required('Confirm PIN is required')
-        .oneOf([Yup.ref('pin'), null], 'PINs must match'),
+        .oneOf([Yup.ref('newPin'), null], 'PINs must match'),
 });
 
 /**
- * SignupScreen Component
+ * ChangePinScreen Component
  *
- * This component renders a signup form that allows users to create an account.
+ * This component renders a changePin form that allows users to create an account.
  * It uses Formik for form handling and validation, displays loader, and handles
  * navigation between screens.
  *
  * @param {object} navigation - The navigation object for screen transitions.
- * @returns {JSX.Element} - The SignupScreen component.
+ * @returns {JSX.Element} - The ChangePinScreen component.
  */
-function SignupScreen({ navigation }) {
+function ChangePinScreen({ navigation }) {
     // Loading state for displaying the loader
     const [loading, setLoading] = useState(false);
 
     // Controller
-    const [signupScreenController, setSignupScreenController] = useState(
-        new SignupScreenController()
-    );
+    // const [changePinScreenController, setChangePinScreenController] = useState(
+    //     new ChangePinScreenController()
+    // );
 
     // Max length for PIN input
     const maxLengthPin = 4;
@@ -91,7 +90,8 @@ function SignupScreen({ navigation }) {
             {/* Header Component */}
             <HeaderComp
                 icon={faDoorOpen}
-                heading={'Sign Up'}
+                heading={'Change PIN'}
+                isExitable={true}
                 navigation={navigation}
             />
 
@@ -105,38 +105,26 @@ function SignupScreen({ navigation }) {
                         <View style={styles.formWrapper}>
                             <Formik
                                 initialValues={{
-                                    userfname: '',
-                                    userlname: '',
-                                    useremail: '',
-                                    pin: '',
-                                    confirmPin: '',
+                                    currentPin: '',
+                                    newPin: '',
+                                    confirmNewPin: '',
                                 }}
-                                validationSchema={SignupSchema}
+                                validationSchema={ChangePinSchema}
                                 onSubmit={async (values) => {
-                                    let error;
-
                                     setLoading(true);
                                     try {
                                         Keyboard.dismiss(); // Dismiss keyboard when submitting
-                                        await signupScreenController.handleSignupButtonPress(
-                                            values,
-                                            navigation
-                                        );
+                                        // changePinScreenController.handleChangePinButtonPress(
+                                        //     values,
+                                        //     navigation
+                                        // );
                                     } catch (error) {
                                         console.error(
                                             'Error during sign-up:',
                                             error
                                         );
-                                        error = error;
                                     } finally {
                                         setLoading(false);
-                                        if (error)
-                                            showToast({
-                                                Toast,
-                                                type: 'error',
-                                                text1: 'Error during sign-up',
-                                                text2: error.message,
-                                            });
                                     }
                                 }}
                             >
@@ -150,143 +138,72 @@ function SignupScreen({ navigation }) {
                                 }) => (
                                     <View style={styles.formContainer}>
                                         <Text style={styles.appTitle}>
-                                            FLASHCARDS
+                                            {'Update your PIN'}
                                         </Text>
                                         <Text style={styles.title}>
-                                            Kindly input your details.
+                                            Kindly update your details.
                                         </Text>
 
-                                        {/* First Name and Last Name Inputs */}
-                                        <View style={styles.row}>
-                                            {/* First name Input */}
-                                            <View
-                                                style={[
-                                                    styles.inputWrapper,
-                                                    styles.rowInputs,
-                                                ]}
-                                            >
-                                                <TextInput
-                                                    style={styles.inputStyle}
-                                                    placeholder="First Name"
-                                                    placeholderTextColor={
-                                                        colors.gray
-                                                    }
-                                                    keyboardType="default"
-                                                    value={values.userfname}
-                                                    onChangeText={handleChange(
-                                                        'userfname'
-                                                    )}
-                                                    onBlur={() =>
-                                                        setFieldTouched(
-                                                            'userfname'
-                                                        )
-                                                    }
-                                                    textContentType="name"
-                                                />
-                                                {errors.userfname &&
-                                                    touched.userfname && (
-                                                        <Text
-                                                            style={
-                                                                styles.errorTxt
-                                                            }
-                                                        >
-                                                            {errors.userfname}
-                                                        </Text>
-                                                    )}
-                                            </View>
-
-                                            {/* Last name Input */}
-                                            <View
-                                                style={[
-                                                    styles.inputWrapper,
-                                                    styles.rowInputs,
-                                                ]}
-                                            >
-                                                <TextInput
-                                                    style={styles.inputStyle}
-                                                    placeholder="Last Name"
-                                                    placeholderTextColor={
-                                                        colors.gray
-                                                    }
-                                                    keyboardType="default"
-                                                    value={values.userlname}
-                                                    onChangeText={handleChange(
-                                                        'userlname'
-                                                    )}
-                                                    onBlur={() =>
-                                                        setFieldTouched(
-                                                            'userlname'
-                                                        )
-                                                    }
-                                                    textContentType="name"
-                                                />
-                                                {errors.userlname &&
-                                                    touched.userlname && (
-                                                        <Text
-                                                            style={
-                                                                styles.errorTxt
-                                                            }
-                                                        >
-                                                            {errors.userlname}
-                                                        </Text>
-                                                    )}
-                                            </View>
-                                        </View>
-
-                                        {/* Email Input */}
+                                        {/* Current PIN Input */}
                                         <View style={styles.inputWrapper}>
                                             <TextInput
                                                 style={styles.inputStyle}
-                                                placeholder="Email"
-                                                placeholderTextColor={
-                                                    colors.gray
-                                                }
-                                                keyboardType="email-address"
-                                                value={values.useremail}
-                                                onChangeText={handleChange(
-                                                    'useremail'
-                                                )}
-                                                onBlur={() =>
-                                                    setFieldTouched('useremail')
-                                                }
-                                                autoCapitalize="none"
-                                                textContentType="emailAddress"
-                                            />
-                                            {errors.useremail &&
-                                                touched.useremail && (
-                                                    <Text
-                                                        style={styles.errorTxt}
-                                                    >
-                                                        {errors.useremail}
-                                                    </Text>
-                                                )}
-                                        </View>
-
-                                        {/* PIN Input */}
-                                        <View style={styles.inputWrapper}>
-                                            <TextInput
-                                                style={styles.inputStyle}
-                                                placeholder="PIN"
+                                                placeholder="Current PIN"
                                                 placeholderTextColor={
                                                     colors.gray
                                                 }
                                                 keyboardType="numeric"
-                                                value={values.pin}
+                                                value={values.currentPin}
                                                 onChangeText={handleChange(
-                                                    'pin'
+                                                    'currentPin'
                                                 )}
                                                 onBlur={() =>
-                                                    setFieldTouched('pin')
+                                                    setFieldTouched(
+                                                        'currentPin'
+                                                    )
                                                 }
                                                 maxLength={maxLengthPin}
                                                 secureTextEntry
                                                 textContentType="password"
                                             />
-                                            {errors.pin && touched.pin && (
-                                                <Text style={styles.errorTxt}>
-                                                    {errors.pin}
-                                                </Text>
-                                            )}
+                                            {errors.currentPin &&
+                                                touched.currentPin && (
+                                                    <Text
+                                                        style={styles.errorTxt}
+                                                    >
+                                                        {errors.currentPin}
+                                                    </Text>
+                                                )}
+                                        </View>
+
+                                        {/* New PIN Input */}
+                                        <View style={styles.inputWrapper}>
+                                            <TextInput
+                                                style={styles.inputStyle}
+                                                placeholder="New PIN"
+                                                placeholderTextColor={
+                                                    colors.gray
+                                                }
+                                                keyboardType="numeric"
+                                                value={values.newPin}
+                                                onChangeText={handleChange(
+                                                    'newPin'
+                                                )}
+                                                onBlur={() =>
+                                                    setFieldTouched('newPin')
+                                                }
+                                                maxLength={maxLengthPin}
+                                                secureTextEntry
+                                                textContentType="password"
+                                            />
+                                            {errors.newPin &&
+                                                touched.newPin && (
+                                                    <Text
+                                                        style={styles.errorTxt}
+                                                    >
+                                                        {errors.newPin}
+                                                    </Text>
+                                                )}
                                         </View>
 
                                         {/* Confirm PIN Input */}
@@ -298,25 +215,25 @@ function SignupScreen({ navigation }) {
                                                     colors.gray
                                                 }
                                                 keyboardType="numeric"
-                                                value={values.confirmPin}
+                                                value={values.confirmNewPin}
                                                 onChangeText={handleChange(
-                                                    'confirmPin'
+                                                    'confirmNewPin'
                                                 )}
                                                 onBlur={() =>
                                                     setFieldTouched(
-                                                        'confirmPin'
+                                                        'confirmNewPin'
                                                     )
                                                 }
                                                 maxLength={maxLengthPin}
                                                 secureTextEntry
                                                 textContentType="password"
                                             />
-                                            {errors.confirmPin &&
-                                                touched.confirmPin && (
+                                            {errors.confirmNewPin &&
+                                                touched.confirmNewPin && (
                                                     <Text
                                                         style={styles.errorTxt}
                                                     >
-                                                        {errors.confirmPin}
+                                                        {errors.confirmNewPin}
                                                     </Text>
                                                 )}
                                         </View>
@@ -334,8 +251,8 @@ function SignupScreen({ navigation }) {
                                             onPress={() =>
                                                 handleButtonNavigation(
                                                     navigation,
-                                                    'Auth',
-                                                    'Landing'
+                                                    'App',
+                                                    'Settings'
                                                 )
                                             }
                                             style={styles.backBtn}
@@ -438,4 +355,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SignupScreen;
+export default ChangePinScreen;

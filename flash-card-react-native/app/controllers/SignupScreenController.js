@@ -21,7 +21,7 @@ export class SignupScreenController {
     async handleSignupButtonPress(values, navigation) {
         try {
             // Delegate sign-up logic to the model
-            await this.signupScreenModel.signupUser(values, navigation);
+            return await this.signupScreenModel.signupUser(values, navigation);
         } catch (error) {
             console.error(
                 'Error occurred while handling sign-up:',
@@ -29,7 +29,7 @@ export class SignupScreenController {
             );
 
             // Throw a new error with a more informative message, but avoid concatenating strings in `throw`
-            throw new Error(`Handling sign-up failure: ${error.message}`);
+            throw new Error('Handling sign-up failure');
         }
     }
 }

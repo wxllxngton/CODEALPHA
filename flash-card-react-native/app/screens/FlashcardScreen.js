@@ -20,6 +20,7 @@ import Animated, {
     useAnimatedStyle,
     withSpring,
 } from 'react-native-reanimated';
+import Toast from 'react-native-toast-message';
 
 // Font Awesome
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -41,6 +42,7 @@ import BackgroundAnimation from '../components/AnimatedBGComp';
 
 // Utils
 import { colors } from '../utils/config';
+import { showToast } from '../utils/helpers';
 
 // Validation schema for flashcard form
 const FlashcardSchema = Yup.object().shape({
@@ -96,17 +98,55 @@ function FlashcardScreen({ navigation }) {
     };
 
     const handleScore = (operation) => {
-        if (operation === 'add')
+        const card = flashcards[currentCardIndex];
+
+        console.log('handleScore: ', card);
+        // Prevents score from being modified if already tallied for this operation
+        if (card.lastOperation === operation) {
+            return showToast({
+                Toast,
+                type: 'error',
+                text1: 'Score Error',
+                text2: `You can't ${operation} the score twice in a row for this card.`,
+            });
+        }
+
+        if (operation === 'add' && card.scoreTallied !== 'add') {
             setScore((prevScore) => {
                 const totalPossibleScore = flashcards.length * 10;
-                if (prevScore === totalPossibleScore) return prevScore;
-                return (prevScore += 10);
+                return prevScore === totalPossibleScore
+                    ? prevScore
+                    : prevScore + 10;
             });
-        if (operation === 'subtract')
+            card.scoreTallied = 'add'; // Mark as added
+        } else if (
+            operation === 'subtract' &&
+            card.scoreTallied !== 'subtract'
+        ) {
             setScore((prevScore) => {
-                if (parseInt(prevScore) === 0) return prevScore;
-                return (prevScore -= 10);
+                return prevScore === 0 ? prevScore : prevScore - 10;
             });
+            card.scoreTallied = 'subtract'; // Mark as subtracted
+        } else {
+            return showToast({
+                Toast,
+                type: 'info',
+                text1: 'Score Info',
+                text2: 'Score for this operation has already been tallied.',
+            });
+        }
+
+        // Store the last operation performed on the card
+        card.lastOperation = operation;
+        setFlashcards((prevFlashcards) => {
+            const newFlashcards = prevFlashcards.map((flashcard) =>
+                Object.values(flashcard) ===
+                Object.values(flashcards[currentCardIndex])
+                    ? card
+                    : flashcard
+            );
+            return newFlashcards; // Update the flashcards state
+        });
     };
 
     const handleSave = (values) => {
@@ -129,6 +169,7 @@ function FlashcardScreen({ navigation }) {
             <HeaderComp
                 icon={faLightbulb}
                 heading={'Flashcard set name'}
+                isExitable={true}
                 navigation={navigation}
             />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -267,6 +308,9 @@ function FlashcardScreen({ navigation }) {
                                 style={styles.swiperWrapper}
                                 showsButtons={true}
                                 index={currentCardIndex}
+                                onIndexChanged={(index) =>
+                                    setCurrentCardIndex(index)
+                                }
                             >
                                 {flashcards.map((item, index) => (
                                     <Pressable
@@ -364,6 +408,7 @@ function FlashcardScreen({ navigation }) {
                     </ScrollView>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
+            <Toast />
         </SafeAreaView>
     );
 }

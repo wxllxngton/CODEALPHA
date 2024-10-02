@@ -1,14 +1,18 @@
 import { createStackNavigator } from '@react-navigation/stack';
+import { NavigationContainer } from '@react-navigation/native';
+
+// Screens
 import {
     LandingScreen,
     HomeScreen,
     FlashcardScreen,
     SignupScreen,
     SigninScreen,
+    SettingsScreen,
+    FAQScreen,
     FAQComp,
+    ChangePinScreen,
 } from '../screens/screens';
-import { NavigationContainer } from '@react-navigation/native';
-import FAQScreen from '../screens/FAQScreen';
 
 // Utils Stack Navigator
 const UtilsStack = createStackNavigator();
@@ -21,6 +25,7 @@ const UtilsStackComp = () => {
             screenOptions={{ headerShown: false }}
         >
             <UtilsStack.Screen name="FAQ" component={FAQScreen} />
+            <UtilsStack.Screen name="ChangePin" component={ChangePinScreen} />
         </UtilsStack.Navigator>
     );
 };
@@ -49,6 +54,7 @@ const AppStackComp = () => {
         <AppStack.Navigator id="App" screenOptions={{ headerShown: false }}>
             <AppStack.Screen name="Home" component={HomeScreen} />
             <AppStack.Screen name="Flashcard" component={FlashcardScreen} />
+            <AppStack.Screen name="Settings" component={SettingsScreen} />
         </AppStack.Navigator>
     );
 };
@@ -60,7 +66,7 @@ function AppContainer() {
     return (
         <NavigationContainer>
             <Stack.Navigator
-                initialRouteName="App"
+                initialRouteName="Auth"
                 screenOptions={{ headerShown: false }}
             >
                 <Stack.Screen name="Auth" component={AuthStackComp} />
