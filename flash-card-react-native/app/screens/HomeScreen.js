@@ -35,6 +35,7 @@ import BackgroundAnimation from '../components/AnimatedBGComp';
 import { colors } from '../utils/config';
 import { getRandomColor, handleButtonNavigation } from '../utils/helpers';
 import SearchBarComp from '../components/SearchbarComp';
+import { useRoute } from '@react-navigation/native';
 
 /**
  * HomeScreen Component displaying the list of flashcards
@@ -43,6 +44,9 @@ import SearchBarComp from '../components/SearchbarComp';
  * @param {Object} navigation - Navigation object for screen transitions.
  */
 function HomeScreen({ navigation }) {
+    const route = useRoute();
+    const session = route.params?.session ?? null;
+    console.log('Session in homescreen: ', session);
     // State for search query
     const [searchQuery, setSearchQuery] = useState('');
 

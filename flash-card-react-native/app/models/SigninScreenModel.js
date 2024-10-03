@@ -2,32 +2,30 @@
  * Script contains the signin screen model.
  */
 
-import { handleButtonNavigation } from '../utils/helpers';
+import SupabaseModel from '../apis/SupabaseModel';
 
 export class SigninScreenModel {
-    constructor() {}
+    constructor() {
+        this._supabaseModel = new SupabaseModel();
+    }
 
-    async signinUser(values, navigation) {
+    async signinUser(values) {
         try {
             values.useremail = values.useremail.toLowerCase();
             console.log('Values in signin: ', values);
+            const { session, error } = await this._supabaseModel.signinUser({
+                email: values.useremail.trim(),
+                password: values.pin.padEnd(6, 'X'),
+            });
 
-            /**
-             * @todo: Implement Auth logic here to login user after
-             * saving details.
-             */
-            const params = {
-                useremail: values.useremail,
-                userfname: 'John',
-                userlname: 'Doe',
-            };
-            handleButtonNavigation(navigation, 'App', 'Home', params);
+            return { session, error };
         } catch (error) {
             console.error(
-                'Error occurred while signing up user: ',
+                'Error occurred while signing in user hereee: ',
                 error.message
             );
-            throw new Error('Signing up user failure: ', error.message);
+
+            throw new Error('Signing in user failure');
         }
     }
 }

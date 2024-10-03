@@ -28,7 +28,6 @@ export class SignupScreenController {
                 error.message
             );
 
-            // Throw a new error with a more informative message, but avoid concatenating strings in `throw`
             throw new Error('Handling sign-up failure');
         }
     }

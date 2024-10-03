@@ -13,6 +13,7 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 // Fontawesome
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -24,7 +25,6 @@ import {
     faSignup,
     faStickyNote,
 } from '@fortawesome/free-solid-svg-icons';
-import Toast from 'react-native-toast-message';
 
 // Form & Validation
 import { Formik } from 'formik';
@@ -113,29 +113,34 @@ function SignupScreen({ navigation }) {
                                 }}
                                 validationSchema={SignupSchema}
                                 onSubmit={async (values) => {
-                                    let error;
+                                    let toastError = null; // Initialize error to null
 
                                     setLoading(true);
                                     try {
                                         Keyboard.dismiss(); // Dismiss keyboard when submitting
-                                        await signupScreenController.handleSignupButtonPress(
-                                            values,
-                                            navigation
-                                        );
+                                        const session =
+                                            await signupScreenController.handleSignupButtonPress(
+                                                values,
+                                                navigation
+                                            );
+
+                                        if (!session)
+                                            return showToast({
+                                                Toast,
+                                                type: 'success',
+                                                text1: 'Complete verification',
+                                                text2: 'Please check your inbox for email verification!',
+                                            });
                                     } catch (error) {
-                                        console.error(
-                                            'Error during sign-up:',
-                                            error
-                                        );
-                                        error = error;
+                                        toastError = error;
                                     } finally {
                                         setLoading(false);
-                                        if (error)
+                                        if (toastError)
                                             showToast({
                                                 Toast,
                                                 type: 'error',
                                                 text1: 'Error during sign-up',
-                                                text2: error.message,
+                                                text2: toastError.message,
                                             });
                                     }
                                 }}
@@ -351,6 +356,7 @@ function SignupScreen({ navigation }) {
                     </ScrollView>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
+            <Toast />
         </SafeAreaView>
     );
 }

@@ -17,12 +17,9 @@ export class SignupScreenModel {
             values.userlname = toTitleCase(values.userlname);
 
             console.log('Values in signup: ', values);
-            /**
-             * @todo: Implement Auth logic here to login user after
-             * saving details.
-             */
+
             const session = await this._supabaseModel.createUser({
-                email: values.useremail,
+                email: values.useremail.trim(),
                 userfname: values.userfname,
                 userlname: values.userlname,
                 password: toString(values.pin).padEnd(6, 'X'),
@@ -30,12 +27,9 @@ export class SignupScreenModel {
 
             console.log('Session in signupUser: ', session);
 
-            // const params = {
-            //     useremail: values.useremail,
-            //     userfname: 'John',
-            //     userlname: 'Doe',
-            // };
-            // handleButtonNavigation(navigation, 'App', 'Home', params);
+            if (!session) return null;
+
+            return session;
         } catch (error) {
             console.error(
                 'Error occurred while signing up user: ',

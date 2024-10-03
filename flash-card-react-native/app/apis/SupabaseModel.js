@@ -81,6 +81,7 @@ class SupabaseModel {
      */
     async signinUser(credentials) {
         try {
+            console.log('Credentials: ', credentials);
             const {
                 data: { session },
                 error,
@@ -89,11 +90,7 @@ class SupabaseModel {
                 password: credentials.password,
             });
 
-            if (error) {
-                throw new Error(`Supabase <signIn> error: ${error.message}`);
-            }
-
-            return session;
+            return { session, error };
         } catch (error) {
             console.error(
                 'Error occurred while signing in user: ',

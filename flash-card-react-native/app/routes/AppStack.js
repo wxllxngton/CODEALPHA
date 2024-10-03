@@ -13,6 +13,8 @@ import {
     FAQComp,
     ChangePinScreen,
 } from '../screens/screens';
+import { useEffect, useState } from 'react';
+import SupabaseModel from '../apis/SupabaseModel';
 
 // Utils Stack Navigator
 const UtilsStack = createStackNavigator();
@@ -25,7 +27,6 @@ const UtilsStackComp = () => {
             screenOptions={{ headerShown: false }}
         >
             <UtilsStack.Screen name="FAQ" component={FAQScreen} />
-            <UtilsStack.Screen name="ChangePin" component={ChangePinScreen} />
         </UtilsStack.Navigator>
     );
 };
@@ -55,6 +56,7 @@ const AppStackComp = () => {
             <AppStack.Screen name="Home" component={HomeScreen} />
             <AppStack.Screen name="Flashcard" component={FlashcardScreen} />
             <AppStack.Screen name="Settings" component={SettingsScreen} />
+            <AppStack.Screen name="ChangePin" component={ChangePinScreen} />
         </AppStack.Navigator>
     );
 };
@@ -63,15 +65,48 @@ const AppStackComp = () => {
 const Stack = createStackNavigator();
 
 function AppContainer() {
+    const [session, setSession] = useState(null);
+
+    const [supabaseModel, setSupabaseModel] = useState(new SupabaseModel());
+
+    // Fetching the current session and listening for auth state changes
+    useEffect(() => {
+        // Get current session
+        supabaseModel
+            .getClient()
+            .auth.getSession()
+            .then(({ data: { session } }) => {
+                setSession(session);
+            });
+
+        // Listen for changes in auth state
+        const { data: authListener } = supabaseModel
+            .getClient()
+            .auth.onAuthStateChange((_event, session) => {
+                setSession(session);
+            });
+
+        console.log('AuthListener in app: ', authListener);
+
+        // Cleanup the listener on unmount
+        return () => {
+            authListener?.unsubscribe();
+        };
+    }, []);
+
     return (
         <NavigationContainer>
             <Stack.Navigator
-                initialRouteName="Auth"
+                initialRouteName={session && session?.user ? 'App' : 'Auth'} // Start at App if session exists
                 screenOptions={{ headerShown: false }}
             >
                 <Stack.Screen name="Auth" component={AuthStackComp} />
-                <Stack.Screen name="Utils" component={UtilsStackComp} />
-                <Stack.Screen name="App" component={AppStackComp} />
+                {session && session?.user && (
+                    <>
+                        <Stack.Screen name="Utils" component={UtilsStackComp} />
+                        <Stack.Screen name="App" component={AppStackComp} />
+                    </>
+                )}
             </Stack.Navigator>
         </NavigationContainer>
     );

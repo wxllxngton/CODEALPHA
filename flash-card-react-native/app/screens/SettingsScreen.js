@@ -97,7 +97,7 @@ function SettingsScreen({ navigation }) {
                             onPress={() =>
                                 handleButtonNavigation(
                                     navigation,
-                                    'Utils',
+                                    'App',
                                     'ChangePin'
                                 )
                             }

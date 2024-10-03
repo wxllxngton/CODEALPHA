@@ -13,6 +13,7 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 // Fontawesome
 import { faSignIn } from '@fortawesome/free-solid-svg-icons';
@@ -27,8 +28,14 @@ import BackgroundAnimation from '../components/AnimatedBGComp';
 import LoaderComp from '../components/LoaderComp';
 
 // Utils
-import { handleButtonNavigation, toTitleCase } from '../utils/helpers';
+import {
+    handleButtonNavigation,
+    showToast,
+    toTitleCase,
+} from '../utils/helpers';
 import { colors } from '../utils/config';
+
+// Controllers
 import { SigninScreenController } from '../controllers/SigninScreenController';
 
 // Validation schema for signin form
@@ -90,20 +97,49 @@ function SigninScreen({ navigation }) {
                                 }}
                                 validationSchema={SigninSchema}
                                 onSubmit={async (values) => {
+                                    let toastError = null; // Initialize error to null
+
                                     setLoading(true);
                                     try {
                                         Keyboard.dismiss(); // Dismiss keyboard when submitting
-                                        signinScreenController.handleSigninButtonPress(
-                                            values,
-                                            navigation
+                                        const { session, error } =
+                                            await signinScreenController.handleSigninButtonPress(
+                                                values
+                                            );
+
+                                        if (error)
+                                            return showToast({
+                                                Toast,
+                                                type: 'error',
+                                                text1: 'Error occurred while signing up',
+                                                text2: error.message,
+                                            });
+
+                                        if (!session)
+                                            return showToast({
+                                                Toast,
+                                                type: 'success',
+                                                text1: 'Complete verification',
+                                                text2: 'Please check your inbox for email verification!',
+                                            });
+
+                                        handleButtonNavigation(
+                                            navigation,
+                                            'App',
+                                            'Home',
+                                            { session }
                                         );
                                     } catch (error) {
-                                        console.error(
-                                            'Error during sign-up:',
-                                            error
-                                        );
+                                        toastError = error;
                                     } finally {
                                         setLoading(false);
+                                        if (toastError)
+                                            showToast({
+                                                Toast,
+                                                type: 'error',
+                                                text1: 'Error during login',
+                                                text2: toastError.message,
+                                            });
                                     }
                                 }}
                             >
@@ -209,6 +245,7 @@ function SigninScreen({ navigation }) {
                     </ScrollView>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
+            <Toast />
         </SafeAreaView>
     );
 }
