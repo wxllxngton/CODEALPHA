@@ -13,17 +13,11 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 // Fontawesome
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-    faDoorOpen,
-    faPerson,
-    faQuestion,
-    faSign,
-    faChangePin,
-    faStickyNote,
-} from '@fortawesome/free-solid-svg-icons';
+import { faDoorOpen } from '@fortawesome/free-solid-svg-icons';
 
 // Form & Validation
 import { Formik } from 'formik';
@@ -35,17 +29,14 @@ import BackgroundAnimation from '../components/AnimatedBGComp';
 import LoaderComp from '../components/LoaderComp';
 
 // Utils
-import { handleButtonNavigation } from '../utils/helpers';
+import { handleButtonNavigation, showToast } from '../utils/helpers';
 import { colors } from '../utils/config';
-// import { ChangePinScreenController } from '../controllers/ChangePinScreenController';
+
+// Controller
+import { ChangePinScreenController } from '../controllers/ChangePinScreenController';
 
 // Validation schema for changePin form
 const ChangePinSchema = Yup.object().shape({
-    currentPin: Yup.string()
-        .required('Enter your current PIN')
-        .matches(/^[0-9]+$/, 'PIN must be numeric')
-        .min(4, 'PIN must be at least 4 characters')
-        .max(4, 'PIN must be max 4 characters'),
     newPin: Yup.string()
         .required('Enter your new PIN')
         .matches(/^[0-9]+$/, 'New PIN must be numeric')
@@ -54,40 +45,23 @@ const ChangePinSchema = Yup.object().shape({
         .notOneOf(
             [Yup.ref('currentPin')],
             'New PIN must not be the same as the current PIN'
-        ), // Custom validation
+        ),
     confirmNewPin: Yup.string()
         .required('Confirm PIN is required')
         .oneOf([Yup.ref('newPin'), null], 'PINs must match'),
 });
 
-/**
- * ChangePinScreen Component
- *
- * This component renders a changePin form that allows users to create an account.
- * It uses Formik for form handling and validation, displays loader, and handles
- * navigation between screens.
- *
- * @param {object} navigation - The navigation object for screen transitions.
- * @returns {JSX.Element} - The ChangePinScreen component.
- */
 function ChangePinScreen({ navigation }) {
-    // Loading state for displaying the loader
     const [loading, setLoading] = useState(false);
-
-    // Controller
-    // const [changePinScreenController, setChangePinScreenController] = useState(
-    //     new ChangePinScreenController()
-    // );
-
-    // Max length for PIN input
+    const [changePinScreenController, setChangePinScreenController] = useState(
+        new ChangePinScreenController()
+    );
     const maxLengthPin = 4;
 
     return (
         <SafeAreaView style={styles.container}>
             <BackgroundAnimation />
-            {/* Loader Component */}
             <LoaderComp enabled={loading} />
-            {/* Header Component */}
             <HeaderComp
                 icon={faDoorOpen}
                 heading={'Change PIN'}
@@ -95,7 +69,6 @@ function ChangePinScreen({ navigation }) {
                 navigation={navigation}
             />
 
-            {/* Dismiss keyboard on outside touch */}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAvoidingView
                     style={styles.container}
@@ -110,19 +83,41 @@ function ChangePinScreen({ navigation }) {
                                     confirmNewPin: '',
                                 }}
                                 validationSchema={ChangePinSchema}
-                                onSubmit={async (values) => {
+                                onSubmit={async (values, { resetForm }) => {
                                     setLoading(true);
                                     try {
-                                        Keyboard.dismiss(); // Dismiss keyboard when submitting
-                                        // changePinScreenController.handleChangePinButtonPress(
-                                        //     values,
-                                        //     navigation
-                                        // );
+                                        Keyboard.dismiss();
+                                        await changePinScreenController.handleChangePinButtonPress(
+                                            values,
+                                            () => {
+                                                resetForm();
+                                                showToast({
+                                                    Toast,
+                                                    type: 'success',
+                                                    text1: 'Successfully changed pin',
+                                                    text2: 'Remember to save new pin',
+                                                });
+                                            },
+                                            (error) => {
+                                                showToast({
+                                                    Toast,
+                                                    type: 'error',
+                                                    text1: 'Error occurred while changing pin',
+                                                    text2: error.message,
+                                                });
+                                            }
+                                        );
                                     } catch (error) {
                                         console.error(
-                                            'Error during sign-up:',
+                                            'Error during pin change:',
                                             error
                                         );
+                                        showToast({
+                                            Toast,
+                                            type: 'error',
+                                            text1: 'Error occurred while changing pin',
+                                            text2: error.message,
+                                        });
                                     } finally {
                                         setLoading(false);
                                     }
@@ -143,38 +138,6 @@ function ChangePinScreen({ navigation }) {
                                         <Text style={styles.title}>
                                             Kindly update your details.
                                         </Text>
-
-                                        {/* Current PIN Input */}
-                                        <View style={styles.inputWrapper}>
-                                            <TextInput
-                                                style={styles.inputStyle}
-                                                placeholder="Current PIN"
-                                                placeholderTextColor={
-                                                    colors.gray
-                                                }
-                                                keyboardType="numeric"
-                                                value={values.currentPin}
-                                                onChangeText={handleChange(
-                                                    'currentPin'
-                                                )}
-                                                onBlur={() =>
-                                                    setFieldTouched(
-                                                        'currentPin'
-                                                    )
-                                                }
-                                                maxLength={maxLengthPin}
-                                                secureTextEntry
-                                                textContentType="password"
-                                            />
-                                            {errors.currentPin &&
-                                                touched.currentPin && (
-                                                    <Text
-                                                        style={styles.errorTxt}
-                                                    >
-                                                        {errors.currentPin}
-                                                    </Text>
-                                                )}
-                                        </View>
 
                                         {/* New PIN Input */}
                                         <View style={styles.inputWrapper}>
@@ -238,15 +201,17 @@ function ChangePinScreen({ navigation }) {
                                                 )}
                                         </View>
 
-                                        {/* Submit and Go Back Buttons */}
+                                        {/* Submit Button */}
                                         <TouchableOpacity
                                             onPress={handleSubmit}
                                             style={styles.submitBtn}
                                         >
                                             <Text style={styles.submitBtnText}>
-                                                Create Account
+                                                Change PIN
                                             </Text>
                                         </TouchableOpacity>
+
+                                        {/* Go Back Button */}
                                         <TouchableOpacity
                                             onPress={() =>
                                                 handleButtonNavigation(
@@ -268,16 +233,16 @@ function ChangePinScreen({ navigation }) {
                     </ScrollView>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
+            <Toast />
         </SafeAreaView>
     );
 }
 
-// Styles
 const styles = StyleSheet.create({
     container: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         flex: 1,
-        backgroundColor: colors.backgroundColor('dark'), // Dark background for animated section
+        backgroundColor: colors.backgroundColor('dark'),
     },
     scrollView: {
         flexGrow: 1,
@@ -300,7 +265,7 @@ const styles = StyleSheet.create({
     inputStyle: {
         height: 45,
         borderWidth: 1,
-        borderColor: colors.textColor('dark'), // Static dark border color
+        borderColor: colors.textColor('dark'),
         borderRadius: 20,
         padding: 10,
         paddingHorizontal: 20,
@@ -321,16 +286,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
         marginBottom: 20,
         textAlign: 'left',
-    },
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    marginR: {
-        marginRight: 10,
-    },
-    rowInputs: {
-        width: 145,
     },
     submitBtn: {
         backgroundColor: colors.primary,

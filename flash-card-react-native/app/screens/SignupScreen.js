@@ -40,6 +40,10 @@ import { handleButtonNavigation, showToast } from '../utils/helpers';
 import { colors } from '../utils/config';
 import { SignupScreenController } from '../controllers/SignupScreenController';
 
+// Redux
+import { setUserSession } from '../store/redux-slices/userSessionSlice';
+import { useDispatch } from 'react-redux';
+
 // Validation schema for signup form
 const SignupSchema = Yup.object().shape({
     userfname: Yup.string()
@@ -72,6 +76,9 @@ const SignupSchema = Yup.object().shape({
  * @returns {JSX.Element} - The SignupScreen component.
  */
 function SignupScreen({ navigation }) {
+    // Redux
+    const dispatch = useDispatch();
+
     // Loading state for displaying the loader
     const [loading, setLoading] = useState(false);
 
@@ -118,11 +125,13 @@ function SignupScreen({ navigation }) {
                                     setLoading(true);
                                     try {
                                         Keyboard.dismiss(); // Dismiss keyboard when submitting
-                                        const session =
+                                        const { session, error } =
                                             await signupScreenController.handleSignupButtonPress(
                                                 values,
                                                 navigation
                                             );
+
+                                        if (error) toastError = error;
 
                                         if (!session)
                                             return showToast({
@@ -131,6 +140,13 @@ function SignupScreen({ navigation }) {
                                                 text1: 'Complete verification',
                                                 text2: 'Please check your inbox for email verification!',
                                             });
+
+                                        dispatch(setUserSession(session));
+                                        handleButtonNavigation(
+                                            navigation,
+                                            'App',
+                                            'Home'
+                                        );
                                     } catch (error) {
                                         toastError = error;
                                     } finally {

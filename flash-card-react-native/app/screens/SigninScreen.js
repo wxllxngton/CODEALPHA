@@ -15,19 +15,19 @@ import {
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 
-// Fontawesome
+// FontAwesome icons
 import { faSignIn } from '@fortawesome/free-solid-svg-icons';
 
-// Form & Validation
+// Form handling and validation
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 
-// Components
+// Custom components
 import HeaderComp from '../components/HeaderComp';
 import BackgroundAnimation from '../components/AnimatedBGComp';
 import LoaderComp from '../components/LoaderComp';
 
-// Utils
+// Utility functions
 import {
     handleButtonNavigation,
     showToast,
@@ -35,10 +35,12 @@ import {
 } from '../utils/helpers';
 import { colors } from '../utils/config';
 
-// Controllers
+// Controller
 import { SigninScreenController } from '../controllers/SigninScreenController';
+import { setUserSession } from '../store/redux-slices/userSessionSlice';
+import { useDispatch } from 'react-redux';
 
-// Validation schema for signin form
+// Validation schema for the signin form
 const SigninSchema = Yup.object().shape({
     useremail: Yup.string().email('Invalid email').required('Enter email'),
     pin: Yup.string()
@@ -51,38 +53,42 @@ const SigninSchema = Yup.object().shape({
 /**
  * SigninScreen Component
  *
- * This component renders a signin form that allows users to create an account.
- * It uses Formik for form handling and validation, displays loader, and handles
- * navigation between screens.
+ * This component renders a signin form that allows users to log into their account.
+ * It uses Formik for form handling and validation, shows a loader while processing,
+ * and manages navigation upon successful or failed sign-in.
  *
  * @param {object} navigation - The navigation object for screen transitions.
  * @returns {JSX.Element} - The SigninScreen component.
  */
 function SigninScreen({ navigation }) {
-    // Loading state for displaying the loader
+    // Redux
+    const dispatch = useDispatch();
+
+    // State for managing the loading indicator
     const [loading, setLoading] = useState(false);
 
-    // Controller
-    const [signinScreenController, setSigninScreenController] = useState(
-        new SigninScreenController()
-    );
+    // State to manage the SigninScreenController instance
+    const [signinScreenController] = useState(new SigninScreenController());
 
-    // Max length for PIN input
+    // Max length for the PIN input field
     const maxLengthPin = 4;
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Background animation */}
             <BackgroundAnimation />
-            {/* Loader Component */}
+
+            {/* Loader component */}
             <LoaderComp enabled={loading} />
-            {/* Header Component */}
+
+            {/* Header component */}
             <HeaderComp
                 icon={faSignIn}
-                heading={'Sign In'}
+                heading="Sign In"
                 navigation={navigation}
             />
 
-            {/* Dismiss keyboard on outside touch */}
+            {/* Dismiss keyboard when tapping outside the form */}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAvoidingView
                     style={styles.container}
@@ -97,49 +103,48 @@ function SigninScreen({ navigation }) {
                                 }}
                                 validationSchema={SigninSchema}
                                 onSubmit={async (values) => {
-                                    let toastError = null; // Initialize error to null
-
                                     setLoading(true);
                                     try {
-                                        Keyboard.dismiss(); // Dismiss keyboard when submitting
-                                        const { session, error } =
-                                            await signinScreenController.handleSigninButtonPress(
-                                                values
-                                            );
+                                        // Dismiss the keyboard before processing
+                                        Keyboard.dismiss();
 
-                                        if (error)
-                                            return showToast({
-                                                Toast,
-                                                type: 'error',
-                                                text1: 'Error occurred while signing up',
-                                                text2: error.message,
-                                            });
-
-                                        if (!session)
-                                            return showToast({
-                                                Toast,
-                                                type: 'success',
-                                                text1: 'Complete verification',
-                                                text2: 'Please check your inbox for email verification!',
-                                            });
-
-                                        handleButtonNavigation(
-                                            navigation,
-                                            'App',
-                                            'Home',
-                                            { session }
+                                        // Handle sign-in process
+                                        await signinScreenController.handleSigninButtonPress(
+                                            values,
+                                            (session) => {
+                                                // Navigate to the Home screen upon success
+                                                dispatch(
+                                                    setUserSession(session)
+                                                );
+                                                values.useremail = '';
+                                                values.pin = '';
+                                                handleButtonNavigation(
+                                                    navigation,
+                                                    'App',
+                                                    'Home'
+                                                );
+                                            },
+                                            (error) => {
+                                                // Handle sign-in failure and show error
+                                                setLoading(false);
+                                                showToast({
+                                                    Toast,
+                                                    type: 'error',
+                                                    text1: 'Sign-in failed',
+                                                    text2: error.message,
+                                                });
+                                            }
                                         );
                                     } catch (error) {
-                                        toastError = error;
+                                        // Show an error message in case of unexpected failure
+                                        showToast({
+                                            Toast,
+                                            type: 'error',
+                                            text1: 'Error occurred while signing in',
+                                            text2: error.message,
+                                        });
                                     } finally {
                                         setLoading(false);
-                                        if (toastError)
-                                            showToast({
-                                                Toast,
-                                                type: 'error',
-                                                text1: 'Error during login',
-                                                text2: toastError.message,
-                                            });
                                     }
                                 }}
                             >
@@ -152,6 +157,7 @@ function SigninScreen({ navigation }) {
                                     setFieldTouched,
                                 }) => (
                                     <View style={styles.formContainer}>
+                                        {/* Welcome message */}
                                         <Text style={styles.appTitle}>
                                             {toTitleCase('welcome back')}
                                         </Text>
@@ -159,7 +165,7 @@ function SigninScreen({ navigation }) {
                                             Kindly input your details.
                                         </Text>
 
-                                        {/* Email Input */}
+                                        {/* Email input field */}
                                         <View style={styles.inputWrapper}>
                                             <TextInput
                                                 style={styles.inputStyle}
@@ -188,7 +194,7 @@ function SigninScreen({ navigation }) {
                                                 )}
                                         </View>
 
-                                        {/* PIN Input */}
+                                        {/* PIN input field */}
                                         <View style={styles.inputWrapper}>
                                             <TextInput
                                                 style={styles.inputStyle}
@@ -215,7 +221,7 @@ function SigninScreen({ navigation }) {
                                             )}
                                         </View>
 
-                                        {/* Submit and Go Back Buttons */}
+                                        {/* Confirm button */}
                                         <TouchableOpacity
                                             onPress={handleSubmit}
                                             style={styles.submitBtn}
@@ -224,6 +230,8 @@ function SigninScreen({ navigation }) {
                                                 Confirm
                                             </Text>
                                         </TouchableOpacity>
+
+                                        {/* Go back button */}
                                         <TouchableOpacity
                                             onPress={() =>
                                                 handleButtonNavigation(
@@ -245,6 +253,8 @@ function SigninScreen({ navigation }) {
                     </ScrollView>
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
+
+            {/* Toast notifications */}
             <Toast />
         </SafeAreaView>
     );
@@ -255,7 +265,7 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         flex: 1,
-        backgroundColor: colors.backgroundColor('dark'), // Dark background for animated section
+        backgroundColor: colors.backgroundColor('dark'),
     },
     scrollView: {
         flexGrow: 1,
@@ -278,7 +288,7 @@ const styles = StyleSheet.create({
     inputStyle: {
         height: 45,
         borderWidth: 1,
-        borderColor: colors.textColor('dark'), // Static dark border color
+        borderColor: colors.textColor('dark'),
         borderRadius: 20,
         padding: 10,
         paddingHorizontal: 20,
@@ -300,16 +310,6 @@ const styles = StyleSheet.create({
         color: colors.textColor('dark'),
         fontSize: 15,
         marginBottom: 20,
-    },
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    marginR: {
-        marginRight: 10,
-    },
-    rowInputs: {
-        width: 145,
     },
     submitBtn: {
         backgroundColor: colors.primary,

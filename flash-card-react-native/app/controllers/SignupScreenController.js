@@ -14,14 +14,13 @@ export class SignupScreenController {
      * Handles the sign-up button press, passing user data to the model and navigating to the appropriate screen.
      *
      * @param {Object} values - The form values containing user sign-up details (name, email, PIN, etc.).
-     * @param {Object} navigation - The navigation object for transitioning between screens.
      *
      * @throws {Error} - If an error occurs during the sign-up process, an error is logged and thrown.
      */
-    async handleSignupButtonPress(values, navigation) {
+    async handleSignupButtonPress(values) {
         try {
             // Delegate sign-up logic to the model
-            return await this.signupScreenModel.signupUser(values, navigation);
+            return await this.signupScreenModel.signupUser(values);
         } catch (error) {
             console.error(
                 'Error occurred while handling sign-up:',

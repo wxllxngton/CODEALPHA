@@ -1,6 +1,8 @@
 /**
- * Script contains the Settings Screen
+ * SettingsScreen displays user settings and provides options for logout,
+ * navigation to support sections, and sharing/rating the app.
  */
+
 import { useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
@@ -20,10 +22,8 @@ import { Avatar, Card, Text, List } from 'react-native-paper';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
     faArrowLeft,
-    faBell,
-    faDoorClosed,
-    faDoorOpen,
     faLock,
+    faDoorOpen,
     faQuestion,
     faShare,
     faStar,
@@ -34,38 +34,69 @@ import { colors } from '../utils/config.js';
 
 // Components
 import LoaderComp from '../components/LoaderComp.js';
-import { handleButtonNavigation } from '../utils/helpers.js';
+import { handleButtonNavigation, showToast } from '../utils/helpers.js';
+import { SettingsScreenController } from '../controllers/SettingsScreenController.js';
+
+// Redux
+import { useDispatch, useSelector } from 'react-redux';
+import { setUserSession } from '../store/redux-slices/userSessionSlice.js';
+import Toast from 'react-native-toast-message';
 
 function SettingsScreen({ navigation }) {
-    const route = useRoute();
-    const user = route.params?.user ?? {};
-    const saccoId = route.params?.saccoId ?? null;
+    const userSession = useSelector((state) => state.userSession.value);
+    const dispatch = useDispatch();
 
     const [loading, setLoading] = useState(false);
+    const [settingsScreenController] = useState(new SettingsScreenController());
 
+    /**
+     * Renders the avatar icon for the Card component.
+     */
     const LeftContent = (props) => (
         <Avatar.Icon {...props} icon="account-outline" />
     );
 
-    const handleLogoutPress = () => {
+    /**
+     * Handles user logout by invoking the controller's signout method.
+     */
+    const handleLogoutPress = async () => {
         setLoading(true);
-        navigation.navigate('Login');
-        setLoading(false);
+        try {
+            await settingsScreenController.handleSignout(
+                () => {
+                    const clearPayload = {
+                        user: {},
+                    };
+                    dispatch(setUserSession(clearPayload)); // Clear user session
+                    handleButtonNavigation(navigation, 'Auth', 'Signin'); // Navigate to sign-in screen
+                },
+                (error) => {
+                    setLoading(false); // Stop the loader on error
+                    showToast({
+                        Toast,
+                        type: 'error',
+                        type1: 'Error while logging out',
+                        type2: error.message,
+                    });
+                }
+            );
+        } catch (error) {
+            console.error('Logout failed:', error.message);
+        } finally {
+            setLoading(false); // Ensure loader is stopped
+        }
     };
 
+    /**
+     * Shares the app link with others.
+     */
     const onShare = async () => {
         try {
             const result = await Share.share({
-                message: `Share our App with friends!`,
+                message: 'Share our App with friends!',
             });
-            if (result.action === Share.sharedAction) {
-                if (result.activityType) {
-                    // shared with activity type of result.activityType
-                } else {
-                    // shared
-                }
-            } else if (result.action === Share.dismissedAction) {
-                // dismissed
+            if (result.action === Share.dismissedAction) {
+                Alert.alert('Share', 'Share dismissed');
             }
         } catch (error) {
             Alert.alert('Error', error.message);
@@ -78,12 +109,8 @@ function SettingsScreen({ navigation }) {
             <Card style={styles.card}>
                 <Card.Title left={LeftContent} />
                 <Card.Content>
-                    <Text variant="titleLarge" style={styles.cardText}>
-                        {user.userfname ?? 'John'} {user.userlname ?? 'Doe'} :{' '}
-                        {'User ID'} {user.userid ?? 'N/A'}
-                    </Text>
                     <Text variant="bodyMedium" style={styles.cardText}>
-                        {user.useremail ?? 'example@doe.com'}
+                        {userSession.email}
                     </Text>
                 </Card.Content>
             </Card>
@@ -103,8 +130,8 @@ function SettingsScreen({ navigation }) {
                             }
                         >
                             <List.Item
-                                style={styles.listItem}
                                 titleStyle={styles.listItem}
+                                style={styles.listItem}
                                 title="Change Your Pin"
                                 left={() => (
                                     <FontAwesomeIcon
@@ -119,7 +146,6 @@ function SettingsScreen({ navigation }) {
 
                         <TouchableOpacity onPress={handleLogoutPress}>
                             <List.Item
-                                style={styles.listItem}
                                 titleStyle={styles.listItem}
                                 title="Logout"
                                 left={() => (
@@ -133,19 +159,21 @@ function SettingsScreen({ navigation }) {
                             />
                         </TouchableOpacity>
                     </List.Section>
+
                     <List.Section>
                         <List.Subheader style={styles.listSubheader}>
                             Support
                         </List.Subheader>
                         <TouchableOpacity
                             onPress={() =>
-                                navigation.navigate('FAQStack', {
-                                    screen: 'FAQ',
-                                })
+                                handleButtonNavigation(
+                                    navigation,
+                                    'Utils',
+                                    'Settings'
+                                )
                             }
                         >
                             <List.Item
-                                style={styles.listItem}
                                 titleStyle={styles.listItem}
                                 title="FAQs"
                                 left={() => (
@@ -159,13 +187,13 @@ function SettingsScreen({ navigation }) {
                             />
                         </TouchableOpacity>
                     </List.Section>
+
                     <List.Section>
                         <List.Subheader style={styles.listSubheader}>
                             Us
                         </List.Subheader>
                         <TouchableOpacity onPress={onShare}>
                             <List.Item
-                                style={styles.listItem}
                                 titleStyle={styles.listItem}
                                 title="Share"
                                 left={() => (
@@ -178,9 +206,9 @@ function SettingsScreen({ navigation }) {
                                 )}
                             />
                         </TouchableOpacity>
+
                         <TouchableOpacity>
                             <List.Item
-                                style={styles.listItem}
                                 titleStyle={styles.listItem}
                                 title="Rate Us"
                                 left={() => (
@@ -206,6 +234,7 @@ function SettingsScreen({ navigation }) {
                     color={colors.textColor('light')}
                 />
             </TouchableOpacity>
+            <Toast />
         </SafeAreaView>
     );
 }

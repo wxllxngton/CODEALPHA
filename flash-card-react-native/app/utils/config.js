@@ -14,6 +14,10 @@ export const colors = {
         if (mode === 'light') return colors.white;
         else return colors.black;
     },
+    modalBackgroundColor: (mode) => {
+        if (mode === 'light') return colors.white;
+        else return '#1F2937';
+    },
     textColor: (mode) => {
         if (mode === 'light') return colors.black;
         else return colors.white;

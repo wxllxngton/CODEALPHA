@@ -37,12 +37,21 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 
 // Components
+import LoaderComp from '../components/LoaderComp';
 import HeaderComp from '../components/HeaderComp';
 import BackgroundAnimation from '../components/AnimatedBGComp';
 
 // Utils
 import { colors } from '../utils/config';
-import { showToast } from '../utils/helpers';
+import { handleButtonNavigation, showToast } from '../utils/helpers';
+
+// Redux
+import { useDispatch, useSelector } from 'react-redux';
+
+// Controller
+import { FlashcardScreenController } from '../controllers/FlashcardScreenController';
+import { setFlashcardSet } from '../store/redux-slices/activeFlashcardSetSlice';
+import ConfirmationModal from '../components/ConfirmationModalComp';
 
 // Validation schema for flashcard form
 const FlashcardSchema = Yup.object().shape({
@@ -51,19 +60,30 @@ const FlashcardSchema = Yup.object().shape({
 });
 
 function FlashcardScreen({ navigation }) {
+    // Redux store
+    const userSession = useSelector((state) => state.userSession.value);
+    const activeFlashcardSet = useSelector(
+        (state) => state.activeFlashcardSet.value
+    );
+    const dispatch = useDispatch();
+
+    // Controller
+    const [flashcardScreenController, setFlashcardScreenController] = useState(
+        new FlashcardScreenController()
+    );
+
     const [isFlipped, setIsFlipped] = useState(false);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [isEditing, setIsEditing] = useState(false);
-    const [isAdding, setIsAdding] = useState(false);
+    const [isAdding, setIsAdding] = useState(
+        activeFlashcardSet.flashcards_in_set > 0 ? false : true
+    );
+    const [isComplete, setIsComplete] = useState(false);
+    const [isConfirmationModalVisible, setIsConfirmationModalVisible] =
+        useState(false);
     const [score, setScore] = useState(0);
-    const [flashcards, setFlashcards] = useState([
-        { question: 'What is the capital of France?', answer: 'Paris' },
-        { question: 'What is 2 + 2?', answer: '4' },
-        {
-            question: "Who wrote 'Romeo and Juliet'?",
-            answer: 'William Shakespeare',
-        },
-    ]);
+    const [flashcards, setFlashcards] = useState([]);
+    const [loading, setLoading] = useState(false);
     const flip = useSharedValue(0); // shared value for animation state
 
     const handleFlip = () => {
@@ -112,21 +132,19 @@ function FlashcardScreen({ navigation }) {
         }
 
         if (operation === 'add' && card.scoreTallied !== 'add') {
-            setScore((prevScore) => {
-                const totalPossibleScore = flashcards.length * 10;
-                return prevScore === totalPossibleScore
-                    ? prevScore
-                    : prevScore + 10;
-            });
-            card.scoreTallied = 'add'; // Mark as added
+            const totalPossibleScore = flashcards.length * 10;
+            if (score < totalPossibleScore) {
+                setScore((prevScore) => prevScore + 10);
+                card.scoreTallied = 'add'; // Mark as added
+            }
         } else if (
             operation === 'subtract' &&
             card.scoreTallied !== 'subtract'
         ) {
-            setScore((prevScore) => {
-                return prevScore === 0 ? prevScore : prevScore - 10;
-            });
-            card.scoreTallied = 'subtract'; // Mark as subtracted
+            if (score > 0) {
+                setScore((prevScore) => prevScore - 10);
+                card.scoreTallied = 'subtract'; // Mark as subtracted
+            }
         } else {
             return showToast({
                 Toast,
@@ -138,37 +156,164 @@ function FlashcardScreen({ navigation }) {
 
         // Store the last operation performed on the card
         card.lastOperation = operation;
-        setFlashcards((prevFlashcards) => {
-            const newFlashcards = prevFlashcards.map((flashcard) =>
-                Object.values(flashcard) ===
-                Object.values(flashcards[currentCardIndex])
-                    ? card
-                    : flashcard
-            );
-            return newFlashcards; // Update the flashcards state
-        });
+        const updatedFlashcards = [...flashcards];
+        updatedFlashcards[currentCardIndex] = card;
+        setFlashcards(updatedFlashcards); // Update the flashcards state
     };
 
-    const handleSave = (values) => {
-        if (isAdding) {
-            // Add a new flashcard
-            setFlashcards([...flashcards, values]);
-            setIsAdding(false);
-        } else if (isEditing) {
-            // Update an existing flashcard
-            const updatedFlashcards = [...flashcards];
-            updatedFlashcards[currentCardIndex] = values;
-            setFlashcards(updatedFlashcards);
-            setIsEditing(false);
+    useEffect(() => {
+        const fetchData = () => {
+            setLoading(true);
+            try {
+                console.log('Fetching flashcards...');
+                flashcardScreenController.handleFetchFlashcards(
+                    activeFlashcardSet.id,
+                    (data) => {
+                        setFlashcards(data);
+                        setLoading(false);
+                    },
+                    (error) => {
+                        setLoading(false);
+                        showToast({
+                            Toast,
+                            type: 'error',
+                            text1: 'Error occurred while fetching flashcards',
+                            text2: error.message,
+                        });
+                    }
+                );
+            } catch (error) {
+                console.error(
+                    'Error occurred while fetching data: ',
+                    error.message
+                );
+            }
+        };
+
+        fetchData();
+    }, [activeFlashcardSet]);
+
+    useEffect(() => {
+        if (
+            flashcards.every(
+                (flashcard) =>
+                    (flashcard?.lastOperation === 'add' ||
+                        flashcard?.lastOperation === 'subtract') &&
+                    score === flashcards.length * 10
+            )
+        ) {
+            setIsComplete(true);
+        } else {
+            setIsComplete(false);
         }
+    }, [flashcards, score]);
+
+    /**
+     * Handles the saving of flashcards, either adding a new flashcard
+     * or updating an existing one based on the current state (adding or editing).
+     *
+     * @param {Object} values - The data for the flashcard to be saved, including question and answer.
+     * @returns {Promise<void>} - A promise that resolves when the save operation is complete.
+     * @throws {Error} - Throws an error if saving the flashcard fails.
+     */
+    const handleSave = async (values) => {
+        console.log('handleSave values: ', values);
+
+        try {
+            if (isAdding) {
+                // Add a new flashcard
+                await flashcardScreenController.handleAddFlashcard(
+                    userSession.id,
+                    activeFlashcardSet.id,
+                    values,
+                    () => {
+                        // Update flashcards state with the new flashcard
+                        setFlashcards([...flashcards, values]);
+                        setIsAdding(false);
+
+                        // Update the active flashcard set count
+                        const updatedActiveFlashcardSet = {
+                            ...activeFlashcardSet,
+                            flashcards_in_set:
+                                activeFlashcardSet.flashcards_in_set + 1,
+                        };
+                        dispatch(setFlashcardSet(updatedActiveFlashcardSet));
+                    },
+                    (error) => {
+                        // Handle the error with a toast notification
+                        showToast({
+                            Toast,
+                            type: 'error',
+                            text1: 'Error while saving new flashcard',
+                            text2: error.message,
+                        });
+                    }
+                );
+            } else if (isEditing) {
+                // Update an existing flashcard
+                const flashcardId = flashcards[currentCardIndex]['id'];
+                await flashcardScreenController.handleUpdateFlashcard(
+                    flashcardId,
+                    values,
+                    () => {
+                        // Update flashcards state with the new flashcard
+                        const updatedFlashcards = [...flashcards];
+                        updatedFlashcards[currentCardIndex] = values;
+
+                        setFlashcards(updatedFlashcards); // Update flashcards state
+                        setIsEditing(false); // Set editing state to false
+                    },
+                    (error) => {
+                        // Handle the error with a toast notification
+                        showToast({
+                            Toast,
+                            type: 'error',
+                            text1: 'Error while updating flashcard',
+                            text2: error.message,
+                        });
+                    }
+                );
+            } else {
+                // Handle the case where neither adding nor editing is active
+                showToast({
+                    Toast,
+                    type: 'info',
+                    text1: 'Save Info',
+                    text2: 'No action to save.',
+                });
+            }
+        } catch (error) {
+            // Log the error to the console
+            console.error(
+                'Error occurred while saving flashcard:',
+                error.message
+            );
+
+            // Show a toast notification for the error
+            showToast({
+                Toast,
+                type: 'error',
+                text1: 'Error while saving flashcard',
+                text2: error.message,
+            });
+        }
+    };
+
+    const handleCompleteSet = () => {
+        setIsConfirmationModalVisible(false);
+        handleButtonNavigation(navigation, 'App', 'Home');
     };
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Loader Component */}
+            <LoaderComp enabled={loading} />
+            {/* Background Animation Component */}
             <BackgroundAnimation />
+            {/* Header Component */}
             <HeaderComp
                 icon={faLightbulb}
-                heading={'Flashcard set name'}
+                heading={activeFlashcardSet.name}
                 isExitable={true}
                 navigation={navigation}
             />
@@ -192,7 +337,9 @@ function FlashcardScreen({ navigation }) {
                                                   .answer,
                                     }}
                                     validationSchema={FlashcardSchema}
-                                    onSubmit={handleSave}
+                                    onSubmit={async (values) =>
+                                        await handleSave(values)
+                                    }
                                 >
                                     {({
                                         errors,
@@ -286,19 +433,24 @@ function FlashcardScreen({ navigation }) {
                                                     Confirm
                                                 </Text>
                                             </TouchableOpacity>
-                                            <TouchableOpacity
-                                                onPress={() => {
-                                                    setIsEditing(false);
-                                                    setIsAdding(false);
-                                                }}
-                                                style={styles.backBtn}
-                                            >
-                                                <Text
-                                                    style={styles.backBtnText}
+                                            {activeFlashcardSet.flashcards_in_set >
+                                            0 ? (
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        setIsEditing(false);
+                                                        setIsAdding(false);
+                                                    }}
+                                                    style={styles.backBtn}
                                                 >
-                                                    Go Back
-                                                </Text>
-                                            </TouchableOpacity>
+                                                    <Text
+                                                        style={
+                                                            styles.backBtnText
+                                                        }
+                                                    >
+                                                        Go Back
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            ) : null}
                                         </View>
                                     )}
                                 </Formik>
@@ -323,6 +475,10 @@ function FlashcardScreen({ navigation }) {
                                             style={[
                                                 styles.card,
                                                 frontAnimatedStyle,
+                                                {
+                                                    backgroundColor:
+                                                        activeFlashcardSet.color,
+                                                },
                                             ]}
                                         >
                                             <Text style={styles.cardText}>
@@ -381,6 +537,19 @@ function FlashcardScreen({ navigation }) {
                                 />
                             </TouchableOpacity>
                         ) : null}
+                        {!isEditing && !isAdding && isComplete ? (
+                            <TouchableOpacity
+                                style={styles.completeButton}
+                                onPress={() =>
+                                    setIsConfirmationModalVisible(true)
+                                }
+                            >
+                                <Text style={styles.completeText}>
+                                    Complete
+                                </Text>
+                            </TouchableOpacity>
+                        ) : null}
+
                         {!isEditing && !isAdding ? (
                             <View style={styles.mark}>
                                 <TouchableOpacity
@@ -409,6 +578,15 @@ function FlashcardScreen({ navigation }) {
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
             <Toast />
+            <ConfirmationModal
+                isOpen={isConfirmationModalVisible}
+                onClose={() => setIsConfirmationModalVisible(false)}
+                onConfirm={handleCompleteSet}
+                title={'Confirm Session Completion'}
+                message={`Your score for this session is ${score}. Click 'Confirm' to move on, or 'Cancel' to continue practicing.`}
+                isDarkMode={true}
+                confirmButtonColor={'success'}
+            />
         </SafeAreaView>
     );
 }
@@ -518,11 +696,25 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: colors.textColor('dark'),
     },
+    completeButton: {
+        marginTop: 10,
+        padding: 10,
+        borderRadius: 20,
+        paddingVertical: 15,
+        width: '90%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5,
+        backgroundColor: colors.primary,
+    },
+    completeText: {
+        color: colors.textColor('dark'),
+    },
     mark: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '90%',
-        marginTop: 20,
+        marginTop: 10,
     },
     navButton: {
         padding: 10,

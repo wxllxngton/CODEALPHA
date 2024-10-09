@@ -10,7 +10,7 @@ export class SignupScreenModel {
         this._supabaseModel = new SupabaseModel();
     }
 
-    async signupUser(values, navigation) {
+    async signupUser(values) {
         try {
             // Set userfname and userlname to titlecase
             values.userfname = toTitleCase(values.userfname);
@@ -18,18 +18,16 @@ export class SignupScreenModel {
 
             console.log('Values in signup: ', values);
 
-            const session = await this._supabaseModel.createUser({
+            const { session, error } = await this._supabaseModel.createUser({
                 email: values.useremail.trim(),
                 userfname: values.userfname,
                 userlname: values.userlname,
-                password: toString(values.pin).padEnd(6, 'X'),
+                password: values.pin.toString().padEnd(6, 'X'),
             });
 
             console.log('Session in signupUser: ', session);
 
-            if (!session) return null;
-
-            return session;
+            return { session, error };
         } catch (error) {
             console.error(
                 'Error occurred while signing up user: ',
