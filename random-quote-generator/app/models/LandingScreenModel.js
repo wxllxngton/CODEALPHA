@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 /**
  * Model for the Landing Screen, responsible for fetching quotes from an external API.
  *

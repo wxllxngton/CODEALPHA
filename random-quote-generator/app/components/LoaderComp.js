@@ -17,9 +17,9 @@ const darkLoader = require('../assets/loader-dark-mode.gif');
  * @param {string} mode - The current mode, either 'light' or 'dark'.
  * @returns {JSX.Element | null} - Returns the loader component if enabled, otherwise null.
  */
-function LoaderComp({ enabled = false, mode = 'light' }) {
+function LoaderComp({ enabled = false }) {
     const mode = useSelector((state) => state.colorScheme.mode);
-    const { schemeBackgroundColor } = useSelector(
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
         (state) => state.colorScheme.scheme
     );
     useEffect(() => {
@@ -32,15 +32,10 @@ function LoaderComp({ enabled = false, mode = 'light' }) {
     if (!enabled) return null;
 
     // Choose the loader image based on the mode
-    const loaderImage = mode === 'dark' ? darkLoader : lightLoader;
+    const loaderImage = mode === 'light' ? lightLoader : darkLoader;
 
     return (
-        <View
-            style={[
-                styles.container,
-                { backgroundColor: schemeBackgroundColor },
-            ]}
-        >
+        <View style={[styles.container, { backgroundColor: schemeTextColor }]}>
             <ImageBackground
                 style={styles.backgroundImage}
                 source={loaderImage} // Dynamically use the correct image
