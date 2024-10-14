@@ -1,6 +1,21 @@
 /**
- * HomeScreen displays user home and provides an overview of fitness data such as steps,
- * progress toward goals, and options for logout and navigation to support sections.
+ * HomeScreen
+ *
+ * This component renders the Home screen for users, displaying an overview of their fitness data
+ * such as daily steps, progress toward fitness goals, calories burned, and distance covered.
+ * It integrates a pedometer to track steps and shows progress through visual elements like progress bars.
+ *
+ * Main Features:
+ * - Displays user's steps, calories burned, and distance covered.
+ * - Uses a pedometer to track steps in real-time.
+ * - Calculates and shows the progress towards a daily goal.
+ * - Supports dark/light color schemes based on user preference.
+ *
+ * Dependencies:
+ * - expo-sensors (Pedometer)
+ * - react-native-paper (ProgressBar, Card)
+ * - react-redux (Color scheme selector)
+ * - react-native-toast-message (Toast notifications)
  */
 
 import { useRoute } from '@react-navigation/native';
@@ -16,7 +31,7 @@ import {
 } from 'react-native';
 import { Card, ProgressBar } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
-// import { startCounter, stopCounter } from 'react-native-accurate-step-counter';
+import { Pedometer } from 'expo-sensors';
 
 // Font Awesome Icons
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -44,29 +59,46 @@ function HomeScreen() {
     );
     const [loading, setLoading] = useState(false);
 
-    // Dummy data for steps (replace with actual pedometer data)
-    // const [dailySteps, setDailySteps] = useState(0);
-    // const dailySteps = 5000;
-    const dailyGoal = 12000;
-    const progress = dailySteps / dailyGoal;
+    const [isPedometerAvailable, setIsPedometerAvailable] =
+        useState('checking');
+    const [pastStepCount, setPastStepCount] = useState(0);
+    const [currentStepCount, setCurrentStepCount] = useState(0);
 
-    // useEffect(() => {
-    //     const config = {
-    //         default_threshold: 15.0,
-    //         default_delay: 150000000,
-    //         cheatInterval: 3000,
-    //         onStepCountChange: (stepCount) => {
-    //             setSteps(stepCount);
-    //         },
-    //         onCheat: () => {
-    //             console.log('User is Cheating');
-    //         },
-    //     };
-    //     startCounter(config);
-    //     return () => {
-    //         stopCounter();
-    //     };
-    // }, []);
+    // Dummy data for steps (replace with actual pedometer data)
+    const dailyGoal = 12000;
+    const progress = currentStepCount / dailyGoal;
+
+    /**
+     * Subscribes to the pedometer sensor and tracks the step count.
+     * If available, it fetches the past step count and sets up a listener for live updates.
+     */
+    const subscribe = async () => {
+        const isAvailable = await Pedometer.isAvailableAsync();
+        setIsPedometerAvailable(String(isAvailable));
+
+        if (isAvailable) {
+            const end = new Date();
+            const start = new Date();
+            start.setDate(end.getDate() - 1);
+
+            const pastStepCountResult = await Pedometer.getStepCountAsync(
+                start,
+                end
+            );
+            if (pastStepCountResult) {
+                setPastStepCount(pastStepCountResult.steps);
+            }
+
+            return Pedometer.watchStepCount((result) => {
+                setCurrentStepCount(result.steps);
+            });
+        }
+    };
+
+    useEffect(() => {
+        const subscription = subscribe();
+        return () => subscription && subscription.remove();
+    }, []);
 
     return (
         <SafeAreaView
@@ -81,7 +113,20 @@ function HomeScreen() {
             {/* StatusBar Component */}
             <StatusBar translucent />
 
+            {/* Header */}
+            <View style={styles.header}>
+                <Text style={{ color: schemeTextColor }}>Hello 👋,</Text>
+                <Text style={{ color: schemeTextColor }}>{user.email}</Text>
+                <View
+                    style={[
+                        styles.headerDivider,
+                        { backgroundColor: schemeTextColor },
+                    ]}
+                />
+            </View>
+
             <ScrollView contentContainerStyle={styles.scrollContainer}>
+                {/* Daily Steps Card */}
                 <View style={styles.cardContainer}>
                     <Card
                         style={[
@@ -110,7 +155,7 @@ function HomeScreen() {
                                 { color: schemeTextColor },
                             ]}
                         >
-                            {dailySteps.toLocaleString()}
+                            {currentStepCount.toLocaleString()}
                         </Text>
                         <ProgressBar
                             progress={progress}
@@ -128,6 +173,7 @@ function HomeScreen() {
                     </Card>
                 </View>
 
+                {/* Calories Burned Card */}
                 <View style={styles.cardContainer}>
                     <Card
                         style={[
@@ -174,6 +220,7 @@ function HomeScreen() {
                     </Card>
                 </View>
 
+                {/* Distance Covered Card */}
                 <View style={styles.cardContainer}>
                     <Card
                         style={[
@@ -239,16 +286,14 @@ const styles = StyleSheet.create({
     },
     cardContainer: {
         width: '100%',
-        marginBottom: 20, // Spacing between cards
+        marginBottom: 20,
         paddingHorizontal: 10,
     },
     card: {
         padding: 20,
         borderRadius: 10,
-        // Elevation for Android
-        elevation: 5,
-        // Shadow for iOS
-        shadowColor: '#000',
+        elevation: 5, // Elevation for Android
+        shadowColor: '#000', // Shadow for iOS
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
@@ -278,6 +323,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.gray,
         textAlign: 'left',
+    },
+    header: {
+        flexDirection: 'column',
+        paddingVertical: 20,
+        paddingHorizontal: 10,
+        alignItems: 'center',
+    },
+    headerDivider: {
+        width: '75%',
+        height: 1,
     },
 });
 

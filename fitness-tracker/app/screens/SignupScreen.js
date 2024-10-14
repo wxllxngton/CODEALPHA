@@ -426,13 +426,21 @@ function SignupScreen({ navigation }) {
                                             {/* Submit and Go Back Buttons */}
                                             <TouchableOpacity
                                                 onPress={handleSubmit}
-                                                style={styles.submitBtn}
+                                                style={[
+                                                    styles.submitBtn,
+                                                    {
+                                                        backgroundColor:
+                                                            schemeBackgroundColor,
+                                                        borderColor:
+                                                            schemeTextColor,
+                                                    },
+                                                ]}
                                             >
                                                 <Text
                                                     style={[
                                                         styles.submitBtnText,
                                                         {
-                                                            color: schemeBackgroundColor,
+                                                            color: schemeTextColor,
                                                         },
                                                     ]}
                                                 >
@@ -447,13 +455,21 @@ function SignupScreen({ navigation }) {
                                                         'Landing'
                                                     )
                                                 }
-                                                style={styles.backBtn}
+                                                style={[
+                                                    styles.backBtn,
+                                                    {
+                                                        backgroundColor:
+                                                            schemeBackgroundColor,
+                                                        borderColor:
+                                                            schemeTextColor,
+                                                    },
+                                                ]}
                                             >
                                                 <Text
                                                     style={[
                                                         styles.backBtnText,
                                                         {
-                                                            color: schemeBackgroundColor,
+                                                            color: schemeTextColor,
                                                         },
                                                     ]}
                                                 >
@@ -529,19 +545,18 @@ const styles = StyleSheet.create({
         width: 145,
     },
     submitBtn: {
-        backgroundColor: colors.primary,
         padding: 15,
+        borderWidth: 1,
         borderRadius: 20,
         marginBottom: 10,
     },
     submitBtnText: {
-        color: colors.textColor('light'),
         textAlign: 'center',
         fontWeight: 'bold',
     },
     backBtn: {
-        backgroundColor: colors.secondary,
         padding: 15,
+        borderWidth: 1,
         borderRadius: 20,
     },
     backBtnText: {
