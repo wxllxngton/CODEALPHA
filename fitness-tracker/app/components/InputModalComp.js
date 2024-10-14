@@ -18,6 +18,7 @@ import {
 
 // Utils
 import { colors } from '../utils/config';
+import { useSelector } from 'react-redux';
 
 /**
  * InputModal Component - A modal to create a new flashcard set.
@@ -29,6 +30,9 @@ import { colors } from '../utils/config';
  * @param {boolean} props.isDarkMode - Determines if the dark mode is active.
  */
 function InputModal({ isOpen, onClose, onCreateSet, isDarkMode }) {
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
     const [setName, setSetName] = useState('');
 
     if (!isOpen) return null;

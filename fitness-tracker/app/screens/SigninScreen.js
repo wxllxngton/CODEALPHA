@@ -12,6 +12,7 @@ import {
     ScrollView,
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
+    ImageBackground,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 
@@ -37,8 +38,10 @@ import { colors } from '../utils/config';
 
 // Controller
 import { SigninScreenController } from '../controllers/SigninScreenController';
-import { setUserSession } from '../store/redux-slices/userSessionSlice';
-import { useDispatch } from 'react-redux';
+import { setUserSession } from '../store/reducers/userSessionSlice';
+import { useDispatch, useSelector } from 'react-redux';
+
+const backgroundImage = require('../assets/landing-screen-wallpaper.webp');
 
 // Validation schema for the signin form
 const SigninSchema = Yup.object().shape({
@@ -53,15 +56,18 @@ const SigninSchema = Yup.object().shape({
 /**
  * SigninScreen Component
  *
- * This component renders a signin form that allows users to log into their account.
+ * This component renders a sign-in form for users to log into their accounts.
  * It uses Formik for form handling and validation, shows a loader while processing,
  * and manages navigation upon successful or failed sign-in.
  *
- * @param {object} navigation - The navigation object for screen transitions.
- * @returns {JSX.Element} - The SigninScreen component.
+ * @param {object} navigation - The navigation object to control screen transitions.
+ * @returns {JSX.Element} The rendered SigninScreen component.
  */
 function SigninScreen({ navigation }) {
     // Redux
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
     const dispatch = useDispatch();
 
     // State for managing the loading indicator
@@ -74,7 +80,12 @@ function SigninScreen({ navigation }) {
     const maxLengthPin = 4;
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView
+            style={[
+                styles.container,
+                { backgroundColor: schemeBackgroundColor },
+            ]}
+        >
             {/* Background animation */}
             <BackgroundAnimation />
 
@@ -88,171 +99,225 @@ function SigninScreen({ navigation }) {
                 navigation={navigation}
             />
 
-            {/* Dismiss keyboard when tapping outside the form */}
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <KeyboardAvoidingView
-                    style={styles.container}
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                >
-                    <ScrollView contentContainerStyle={styles.scrollView}>
-                        <View style={styles.formWrapper}>
-                            <Formik
-                                initialValues={{
-                                    useremail: '',
-                                    pin: '',
-                                }}
-                                validationSchema={SigninSchema}
-                                onSubmit={async (values) => {
-                                    setLoading(true);
-                                    try {
-                                        // Dismiss the keyboard before processing
-                                        Keyboard.dismiss();
+            {/* Background image below the header */}
+            <ImageBackground
+                source={backgroundImage}
+                resizeMode="cover"
+                style={styles.backgroundImage}
+            >
+                {/* Dismiss keyboard when tapping outside the form */}
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <KeyboardAvoidingView
+                        style={[styles.container]}
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    >
+                        <ScrollView contentContainerStyle={styles.scrollView}>
+                            <View style={styles.formWrapper}>
+                                <Formik
+                                    initialValues={{
+                                        useremail: '',
+                                        pin: '',
+                                    }}
+                                    validationSchema={SigninSchema}
+                                    onSubmit={async (values) => {
+                                        setLoading(true);
+                                        try {
+                                            // Dismiss the keyboard before processing
+                                            Keyboard.dismiss();
 
-                                        // Handle sign-in process
-                                        await signinScreenController.handleSigninButtonPress(
-                                            values,
-                                            (session) => {
-                                                // Navigate to the Home screen upon success
-                                                dispatch(
-                                                    setUserSession(session)
-                                                );
-                                                values.useremail = '';
-                                                values.pin = '';
-                                                handleButtonNavigation(
-                                                    navigation,
-                                                    'App',
-                                                    'Home'
-                                                );
-                                            },
-                                            (error) => {
-                                                // Handle sign-in failure and show error
-                                                setLoading(false);
-                                                showToast({
-                                                    Toast,
-                                                    type: 'error',
-                                                    text1: 'Sign-in failed',
-                                                    text2: error.message,
-                                                });
-                                            }
-                                        );
-                                    } catch (error) {
-                                        // Show an error message in case of unexpected failure
-                                        showToast({
-                                            Toast,
-                                            type: 'error',
-                                            text1: 'Error occurred while signing in',
-                                            text2: error.message,
-                                        });
-                                    } finally {
-                                        setLoading(false);
-                                    }
-                                }}
-                            >
-                                {({
-                                    errors,
-                                    touched,
-                                    values,
-                                    handleChange,
-                                    handleSubmit,
-                                    setFieldTouched,
-                                }) => (
-                                    <View style={styles.formContainer}>
-                                        {/* Welcome message */}
-                                        <Text style={styles.appTitle}>
-                                            {toTitleCase('welcome back')}
-                                        </Text>
-                                        <Text style={styles.title}>
-                                            Kindly input your details.
-                                        </Text>
+                                            // Handle sign-in process
+                                            await signinScreenController.handleSigninButtonPress(
+                                                values,
+                                                (session) => {
+                                                    // Navigate to the Home screen upon success
+                                                    dispatch(
+                                                        setUserSession(session)
+                                                    );
+                                                    values.useremail = '';
+                                                    values.pin = '';
+                                                    handleButtonNavigation(
+                                                        navigation,
+                                                        'App',
+                                                        'Home'
+                                                    );
+                                                },
+                                                (error) => {
+                                                    // Handle sign-in failure and show error
+                                                    setLoading(false);
+                                                    showToast({
+                                                        Toast,
+                                                        type: 'error',
+                                                        text1: 'Sign-in failed',
+                                                        text2: error.message,
+                                                    });
+                                                }
+                                            );
+                                        } catch (error) {
+                                            // Show an error message in case of unexpected failure
+                                            showToast({
+                                                Toast,
+                                                type: 'error',
+                                                text1: 'Error occurred while signing in',
+                                                text2: error.message,
+                                            });
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
+                                >
+                                    {({
+                                        errors,
+                                        touched,
+                                        values,
+                                        handleChange,
+                                        handleSubmit,
+                                        setFieldTouched,
+                                    }) => (
+                                        <View
+                                            style={[
+                                                styles.formContainer,
+                                                {
+                                                    backgroundColor:
+                                                        schemeBackgroundColor,
+                                                },
+                                            ]}
+                                        >
+                                            {/* Welcome message */}
+                                            <Text style={styles.appTitle}>
+                                                {toTitleCase('welcome back')}
+                                            </Text>
+                                            <Text
+                                                style={[
+                                                    styles.title,
+                                                    { color: schemeTextColor },
+                                                ]}
+                                            >
+                                                Kindly input your details.
+                                            </Text>
 
-                                        {/* Email input field */}
-                                        <View style={styles.inputWrapper}>
-                                            <TextInput
-                                                style={styles.inputStyle}
-                                                placeholder="Email"
-                                                placeholderTextColor={
-                                                    colors.gray
-                                                }
-                                                keyboardType="email-address"
-                                                value={values.useremail}
-                                                onChangeText={handleChange(
-                                                    'useremail'
-                                                )}
-                                                onBlur={() =>
-                                                    setFieldTouched('useremail')
-                                                }
-                                                autoCapitalize="none"
-                                                textContentType="emailAddress"
-                                            />
-                                            {errors.useremail &&
-                                                touched.useremail && (
+                                            {/* Email input field */}
+                                            <View style={styles.inputWrapper}>
+                                                <TextInput
+                                                    style={[
+                                                        styles.inputStyle,
+                                                        {
+                                                            borderColor:
+                                                                schemeTextColor,
+                                                            color: schemeTextColor,
+                                                        },
+                                                    ]}
+                                                    placeholder="Email"
+                                                    placeholderTextColor={
+                                                        colors.gray
+                                                    }
+                                                    keyboardType="email-address"
+                                                    value={values.useremail}
+                                                    onChangeText={handleChange(
+                                                        'useremail'
+                                                    )}
+                                                    onBlur={() =>
+                                                        setFieldTouched(
+                                                            'useremail'
+                                                        )
+                                                    }
+                                                    autoCapitalize="none"
+                                                    textContentType="emailAddress"
+                                                />
+                                                {errors.useremail &&
+                                                    touched.useremail && (
+                                                        <Text
+                                                            style={
+                                                                styles.errorTxt
+                                                            }
+                                                        >
+                                                            {errors.useremail}
+                                                        </Text>
+                                                    )}
+                                            </View>
+
+                                            {/* PIN input field */}
+                                            <View style={styles.inputWrapper}>
+                                                <TextInput
+                                                    style={[
+                                                        styles.inputStyle,
+                                                        {
+                                                            borderColor:
+                                                                schemeTextColor,
+                                                            color: schemeTextColor,
+                                                        },
+                                                    ]}
+                                                    placeholder="PIN"
+                                                    placeholderTextColor={
+                                                        colors.gray
+                                                    }
+                                                    keyboardType="numeric"
+                                                    value={values.pin}
+                                                    onChangeText={handleChange(
+                                                        'pin'
+                                                    )}
+                                                    onBlur={() =>
+                                                        setFieldTouched('pin')
+                                                    }
+                                                    maxLength={maxLengthPin}
+                                                    secureTextEntry
+                                                    textContentType="password"
+                                                />
+                                                {errors.pin && touched.pin && (
                                                     <Text
                                                         style={styles.errorTxt}
                                                     >
-                                                        {errors.useremail}
+                                                        {errors.pin}
                                                     </Text>
                                                 )}
-                                        </View>
+                                            </View>
 
-                                        {/* PIN input field */}
-                                        <View style={styles.inputWrapper}>
-                                            <TextInput
-                                                style={styles.inputStyle}
-                                                placeholder="PIN"
-                                                placeholderTextColor={
-                                                    colors.gray
-                                                }
-                                                keyboardType="numeric"
-                                                value={values.pin}
-                                                onChangeText={handleChange(
-                                                    'pin'
-                                                )}
-                                                onBlur={() =>
-                                                    setFieldTouched('pin')
-                                                }
-                                                maxLength={maxLengthPin}
-                                                secureTextEntry
-                                                textContentType="password"
-                                            />
-                                            {errors.pin && touched.pin && (
-                                                <Text style={styles.errorTxt}>
-                                                    {errors.pin}
+                                            {/* Confirm button */}
+                                            <TouchableOpacity
+                                                onPress={handleSubmit}
+                                                style={styles.submitBtn}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.submitBtnText,
+                                                        {
+                                                            color: schemeBackgroundColor,
+                                                        },
+                                                    ]}
+                                                >
+                                                    Confirm
                                                 </Text>
-                                            )}
+                                            </TouchableOpacity>
+
+                                            {/* Go back button */}
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    handleButtonNavigation(
+                                                        navigation,
+                                                        'Auth',
+                                                        'Landing'
+                                                    )
+                                                }
+                                                style={styles.backBtn}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.backBtnText,
+                                                        {
+                                                            color: schemeBackgroundColor,
+                                                        },
+                                                    ]}
+                                                >
+                                                    Go Back
+                                                </Text>
+                                            </TouchableOpacity>
                                         </View>
-
-                                        {/* Confirm button */}
-                                        <TouchableOpacity
-                                            onPress={handleSubmit}
-                                            style={styles.submitBtn}
-                                        >
-                                            <Text style={styles.submitBtnText}>
-                                                Confirm
-                                            </Text>
-                                        </TouchableOpacity>
-
-                                        {/* Go back button */}
-                                        <TouchableOpacity
-                                            onPress={() =>
-                                                handleButtonNavigation(
-                                                    navigation,
-                                                    'Auth',
-                                                    'Landing'
-                                                )
-                                            }
-                                            style={styles.backBtn}
-                                        >
-                                            <Text style={styles.backBtnText}>
-                                                Go Back
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </Formik>
-                        </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
+                                    )}
+                                </Formik>
+                            </View>
+                        </ScrollView>
+                    </KeyboardAvoidingView>
+                </TouchableWithoutFeedback>
+            </ImageBackground>
 
             {/* Toast notifications */}
             <Toast />
@@ -265,7 +330,6 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         flex: 1,
-        backgroundColor: colors.backgroundColor('dark'),
     },
     scrollView: {
         flexGrow: 1,
@@ -277,7 +341,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     formContainer: {
-        backgroundColor: colors.backgroundColor('dark'),
         padding: 20,
         borderRadius: 20,
         width: '90%',
@@ -288,11 +351,9 @@ const styles = StyleSheet.create({
     inputStyle: {
         height: 45,
         borderWidth: 1,
-        borderColor: colors.textColor('dark'),
         borderRadius: 20,
         padding: 10,
         paddingHorizontal: 20,
-        color: colors.textColor('dark'),
     },
     errorTxt: {
         paddingHorizontal: 20,
@@ -307,7 +368,6 @@ const styles = StyleSheet.create({
     },
     title: {
         textAlign: 'center',
-        color: colors.textColor('dark'),
         fontSize: 15,
         marginBottom: 20,
     },
@@ -318,7 +378,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     submitBtnText: {
-        color: colors.textColor('light'),
         textAlign: 'center',
         fontWeight: 'bold',
     },
@@ -328,9 +387,12 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     backBtnText: {
-        color: colors.textColor('light'),
         textAlign: 'center',
         fontWeight: 'bold',
+    },
+    backgroundImage: {
+        flex: 1,
+        justifyContent: 'center',
     },
 });
 

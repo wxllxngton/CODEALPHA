@@ -12,6 +12,7 @@ import {
     ScrollView,
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
+    ImageBackground,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 
@@ -41,8 +42,10 @@ import { colors } from '../utils/config';
 import { SignupScreenController } from '../controllers/SignupScreenController';
 
 // Redux
-import { setUserSession } from '../store/redux-slices/userSessionSlice';
-import { useDispatch } from 'react-redux';
+import { setUserSession } from '../store/reducers/userSessionSlice';
+import { useDispatch, useSelector } from 'react-redux';
+
+const backgroundImage = require('../assets/landing-screen-wallpaper.webp');
 
 // Validation schema for signup form
 const SignupSchema = Yup.object().shape({
@@ -77,6 +80,9 @@ const SignupSchema = Yup.object().shape({
  */
 function SignupScreen({ navigation }) {
     // Redux
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
     const dispatch = useDispatch();
 
     // Loading state for displaying the loader
@@ -91,287 +97,374 @@ function SignupScreen({ navigation }) {
     const maxLengthPin = 4;
 
     return (
-        <SafeAreaView style={styles.container}>
-            <BackgroundAnimation />
+        <SafeAreaView
+            style={[
+                styles.container,
+                { backgroundColor: schemeBackgroundColor },
+            ]}
+        >
             {/* Loader Component */}
             <LoaderComp enabled={loading} />
+
+            {/* AnimatedBG Component */}
+            <BackgroundAnimation />
+
             {/* Header Component */}
             <HeaderComp
                 icon={faDoorOpen}
                 heading={'Sign Up'}
                 navigation={navigation}
             />
+            <ImageBackground
+                source={backgroundImage}
+                resizeMode="cover"
+                style={{ flex: 1 }}
+            >
+                {/* Dismiss keyboard on outside touch */}
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <KeyboardAvoidingView
+                        style={[styles.container]}
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    >
+                        <ScrollView contentContainerStyle={styles.scrollView}>
+                            <View style={styles.formWrapper}>
+                                <Formik
+                                    initialValues={{
+                                        userfname: '',
+                                        userlname: '',
+                                        useremail: '',
+                                        pin: '',
+                                        confirmPin: '',
+                                    }}
+                                    validationSchema={SignupSchema}
+                                    onSubmit={async (values) => {
+                                        let toastError = null; // Initialize error to null
 
-            {/* Dismiss keyboard on outside touch */}
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <KeyboardAvoidingView
-                    style={styles.container}
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                >
-                    <ScrollView contentContainerStyle={styles.scrollView}>
-                        <View style={styles.formWrapper}>
-                            <Formik
-                                initialValues={{
-                                    userfname: '',
-                                    userlname: '',
-                                    useremail: '',
-                                    pin: '',
-                                    confirmPin: '',
-                                }}
-                                validationSchema={SignupSchema}
-                                onSubmit={async (values) => {
-                                    let toastError = null; // Initialize error to null
+                                        setLoading(true);
+                                        try {
+                                            Keyboard.dismiss(); // Dismiss keyboard when submitting
+                                            const { session, error } =
+                                                await signupScreenController.handleSignupButtonPress(
+                                                    values,
+                                                    navigation
+                                                );
 
-                                    setLoading(true);
-                                    try {
-                                        Keyboard.dismiss(); // Dismiss keyboard when submitting
-                                        const { session, error } =
-                                            await signupScreenController.handleSignupButtonPress(
-                                                values,
-                                                navigation
+                                            if (error) toastError = error;
+
+                                            if (!session)
+                                                return showToast({
+                                                    Toast,
+                                                    type: 'success',
+                                                    text1: 'Complete verification',
+                                                    text2: 'Please check your inbox for email verification!',
+                                                });
+
+                                            dispatch(setUserSession(session));
+                                            handleButtonNavigation(
+                                                navigation,
+                                                'App',
+                                                'Home'
                                             );
-
-                                        if (error) toastError = error;
-
-                                        if (!session)
-                                            return showToast({
-                                                Toast,
-                                                type: 'success',
-                                                text1: 'Complete verification',
-                                                text2: 'Please check your inbox for email verification!',
-                                            });
-
-                                        dispatch(setUserSession(session));
-                                        handleButtonNavigation(
-                                            navigation,
-                                            'App',
-                                            'Home'
-                                        );
-                                    } catch (error) {
-                                        toastError = error;
-                                    } finally {
-                                        setLoading(false);
-                                        if (toastError)
-                                            showToast({
-                                                Toast,
-                                                type: 'error',
-                                                text1: 'Error during sign-up',
-                                                text2: toastError.message,
-                                            });
-                                    }
-                                }}
-                            >
-                                {({
-                                    errors,
-                                    touched,
-                                    values,
-                                    handleChange,
-                                    handleSubmit,
-                                    setFieldTouched,
-                                }) => (
-                                    <View style={styles.formContainer}>
-                                        <Text style={styles.appTitle}>
-                                            FLASHCARDS
-                                        </Text>
-                                        <Text style={styles.title}>
-                                            Kindly input your details.
-                                        </Text>
-
-                                        {/* First Name and Last Name Inputs */}
-                                        <View style={styles.row}>
-                                            {/* First name Input */}
-                                            <View
+                                        } catch (error) {
+                                            toastError = error;
+                                        } finally {
+                                            setLoading(false);
+                                            if (toastError)
+                                                showToast({
+                                                    Toast,
+                                                    type: 'error',
+                                                    text1: 'Error during sign-up',
+                                                    text2: toastError.message,
+                                                });
+                                        }
+                                    }}
+                                >
+                                    {({
+                                        errors,
+                                        touched,
+                                        values,
+                                        handleChange,
+                                        handleSubmit,
+                                        setFieldTouched,
+                                    }) => (
+                                        <View
+                                            style={[
+                                                styles.formContainer,
+                                                {
+                                                    backgroundColor:
+                                                        schemeBackgroundColor,
+                                                },
+                                            ]}
+                                        >
+                                            <Text style={styles.appTitle}>
+                                                {'apt'}
+                                            </Text>
+                                            <Text
                                                 style={[
-                                                    styles.inputWrapper,
-                                                    styles.rowInputs,
+                                                    styles.title,
+                                                    { color: schemeTextColor },
                                                 ]}
                                             >
-                                                <TextInput
-                                                    style={styles.inputStyle}
-                                                    placeholder="First Name"
-                                                    placeholderTextColor={
-                                                        colors.gray
-                                                    }
-                                                    keyboardType="default"
-                                                    value={values.userfname}
-                                                    onChangeText={handleChange(
-                                                        'userfname'
-                                                    )}
-                                                    onBlur={() =>
-                                                        setFieldTouched(
+                                                Kindly input your details.
+                                            </Text>
+
+                                            {/* First Name and Last Name Inputs */}
+                                            <View style={styles.row}>
+                                                {/* First name Input */}
+                                                <View
+                                                    style={[
+                                                        styles.inputWrapper,
+                                                        styles.rowInputs,
+                                                    ]}
+                                                >
+                                                    <TextInput
+                                                        style={[
+                                                            styles.inputStyle,
+                                                            {
+                                                                color: schemeTextColor,
+                                                                borderColor:
+                                                                    schemeTextColor,
+                                                            },
+                                                        ]}
+                                                        placeholder="First Name"
+                                                        placeholderTextColor={
+                                                            colors.gray
+                                                        }
+                                                        keyboardType="default"
+                                                        value={values.userfname}
+                                                        onChangeText={handleChange(
                                                             'userfname'
-                                                        )
-                                                    }
-                                                    textContentType="name"
-                                                />
-                                                {errors.userfname &&
-                                                    touched.userfname && (
-                                                        <Text
-                                                            style={
-                                                                styles.errorTxt
-                                                            }
-                                                        >
-                                                            {errors.userfname}
-                                                        </Text>
-                                                    )}
+                                                        )}
+                                                        onBlur={() =>
+                                                            setFieldTouched(
+                                                                'userfname'
+                                                            )
+                                                        }
+                                                        textContentType="name"
+                                                    />
+                                                    {errors.userfname &&
+                                                        touched.userfname && (
+                                                            <Text
+                                                                style={
+                                                                    styles.errorTxt
+                                                                }
+                                                            >
+                                                                {
+                                                                    errors.userfname
+                                                                }
+                                                            </Text>
+                                                        )}
+                                                </View>
+
+                                                {/* Last name Input */}
+                                                <View
+                                                    style={[
+                                                        styles.inputWrapper,
+                                                        styles.rowInputs,
+                                                    ]}
+                                                >
+                                                    <TextInput
+                                                        style={[
+                                                            styles.inputStyle,
+                                                            {
+                                                                color: schemeTextColor,
+                                                                borderColor:
+                                                                    schemeTextColor,
+                                                            },
+                                                        ]}
+                                                        placeholder="Last Name"
+                                                        placeholderTextColor={
+                                                            colors.gray
+                                                        }
+                                                        keyboardType="default"
+                                                        value={values.userlname}
+                                                        onChangeText={handleChange(
+                                                            'userlname'
+                                                        )}
+                                                        onBlur={() =>
+                                                            setFieldTouched(
+                                                                'userlname'
+                                                            )
+                                                        }
+                                                        textContentType="name"
+                                                    />
+                                                    {errors.userlname &&
+                                                        touched.userlname && (
+                                                            <Text
+                                                                style={
+                                                                    styles.errorTxt
+                                                                }
+                                                            >
+                                                                {
+                                                                    errors.userlname
+                                                                }
+                                                            </Text>
+                                                        )}
+                                                </View>
                                             </View>
 
-                                            {/* Last name Input */}
-                                            <View
-                                                style={[
-                                                    styles.inputWrapper,
-                                                    styles.rowInputs,
-                                                ]}
-                                            >
+                                            {/* Email Input */}
+                                            <View style={styles.inputWrapper}>
                                                 <TextInput
-                                                    style={styles.inputStyle}
-                                                    placeholder="Last Name"
+                                                    style={[
+                                                        styles.inputStyle,
+                                                        {
+                                                            color: schemeTextColor,
+                                                            borderColor:
+                                                                schemeTextColor,
+                                                        },
+                                                    ]}
+                                                    placeholder="Email"
                                                     placeholderTextColor={
                                                         colors.gray
                                                     }
-                                                    keyboardType="default"
-                                                    value={values.userlname}
+                                                    keyboardType="email-address"
+                                                    value={values.useremail}
                                                     onChangeText={handleChange(
-                                                        'userlname'
+                                                        'useremail'
                                                     )}
                                                     onBlur={() =>
                                                         setFieldTouched(
-                                                            'userlname'
+                                                            'useremail'
                                                         )
                                                     }
-                                                    textContentType="name"
+                                                    autoCapitalize="none"
+                                                    textContentType="emailAddress"
                                                 />
-                                                {errors.userlname &&
-                                                    touched.userlname && (
+                                                {errors.useremail &&
+                                                    touched.useremail && (
                                                         <Text
                                                             style={
                                                                 styles.errorTxt
                                                             }
                                                         >
-                                                            {errors.userlname}
+                                                            {errors.useremail}
                                                         </Text>
                                                     )}
                                             </View>
-                                        </View>
 
-                                        {/* Email Input */}
-                                        <View style={styles.inputWrapper}>
-                                            <TextInput
-                                                style={styles.inputStyle}
-                                                placeholder="Email"
-                                                placeholderTextColor={
-                                                    colors.gray
-                                                }
-                                                keyboardType="email-address"
-                                                value={values.useremail}
-                                                onChangeText={handleChange(
-                                                    'useremail'
-                                                )}
-                                                onBlur={() =>
-                                                    setFieldTouched('useremail')
-                                                }
-                                                autoCapitalize="none"
-                                                textContentType="emailAddress"
-                                            />
-                                            {errors.useremail &&
-                                                touched.useremail && (
+                                            {/* PIN Input */}
+                                            <View style={styles.inputWrapper}>
+                                                <TextInput
+                                                    style={[
+                                                        styles.inputStyle,
+                                                        {
+                                                            color: schemeTextColor,
+                                                            borderColor:
+                                                                schemeTextColor,
+                                                        },
+                                                    ]}
+                                                    placeholder="PIN"
+                                                    placeholderTextColor={
+                                                        colors.gray
+                                                    }
+                                                    keyboardType="numeric"
+                                                    value={values.pin}
+                                                    onChangeText={handleChange(
+                                                        'pin'
+                                                    )}
+                                                    onBlur={() =>
+                                                        setFieldTouched('pin')
+                                                    }
+                                                    maxLength={maxLengthPin}
+                                                    secureTextEntry
+                                                    textContentType="password"
+                                                />
+                                                {errors.pin && touched.pin && (
                                                     <Text
                                                         style={styles.errorTxt}
                                                     >
-                                                        {errors.useremail}
+                                                        {errors.pin}
                                                     </Text>
                                                 )}
-                                        </View>
+                                            </View>
 
-                                        {/* PIN Input */}
-                                        <View style={styles.inputWrapper}>
-                                            <TextInput
-                                                style={styles.inputStyle}
-                                                placeholder="PIN"
-                                                placeholderTextColor={
-                                                    colors.gray
-                                                }
-                                                keyboardType="numeric"
-                                                value={values.pin}
-                                                onChangeText={handleChange(
-                                                    'pin'
-                                                )}
-                                                onBlur={() =>
-                                                    setFieldTouched('pin')
-                                                }
-                                                maxLength={maxLengthPin}
-                                                secureTextEntry
-                                                textContentType="password"
-                                            />
-                                            {errors.pin && touched.pin && (
-                                                <Text style={styles.errorTxt}>
-                                                    {errors.pin}
-                                                </Text>
-                                            )}
-                                        </View>
-
-                                        {/* Confirm PIN Input */}
-                                        <View style={styles.inputWrapper}>
-                                            <TextInput
-                                                style={styles.inputStyle}
-                                                placeholder="Confirm PIN"
-                                                placeholderTextColor={
-                                                    colors.gray
-                                                }
-                                                keyboardType="numeric"
-                                                value={values.confirmPin}
-                                                onChangeText={handleChange(
-                                                    'confirmPin'
-                                                )}
-                                                onBlur={() =>
-                                                    setFieldTouched(
+                                            {/* Confirm PIN Input */}
+                                            <View style={styles.inputWrapper}>
+                                                <TextInput
+                                                    style={[
+                                                        styles.inputStyle,
+                                                        {
+                                                            color: schemeTextColor,
+                                                            borderColor:
+                                                                schemeTextColor,
+                                                        },
+                                                    ]}
+                                                    placeholder="Confirm PIN"
+                                                    placeholderTextColor={
+                                                        colors.gray
+                                                    }
+                                                    keyboardType="numeric"
+                                                    value={values.confirmPin}
+                                                    onChangeText={handleChange(
                                                         'confirmPin'
+                                                    )}
+                                                    onBlur={() =>
+                                                        setFieldTouched(
+                                                            'confirmPin'
+                                                        )
+                                                    }
+                                                    maxLength={maxLengthPin}
+                                                    secureTextEntry
+                                                    textContentType="password"
+                                                />
+                                                {errors.confirmPin &&
+                                                    touched.confirmPin && (
+                                                        <Text
+                                                            style={
+                                                                styles.errorTxt
+                                                            }
+                                                        >
+                                                            {errors.confirmPin}
+                                                        </Text>
+                                                    )}
+                                            </View>
+
+                                            {/* Submit and Go Back Buttons */}
+                                            <TouchableOpacity
+                                                onPress={handleSubmit}
+                                                style={styles.submitBtn}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.submitBtnText,
+                                                        {
+                                                            color: schemeBackgroundColor,
+                                                        },
+                                                    ]}
+                                                >
+                                                    Create Account
+                                                </Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    handleButtonNavigation(
+                                                        navigation,
+                                                        'Auth',
+                                                        'Landing'
                                                     )
                                                 }
-                                                maxLength={maxLengthPin}
-                                                secureTextEntry
-                                                textContentType="password"
-                                            />
-                                            {errors.confirmPin &&
-                                                touched.confirmPin && (
-                                                    <Text
-                                                        style={styles.errorTxt}
-                                                    >
-                                                        {errors.confirmPin}
-                                                    </Text>
-                                                )}
+                                                style={styles.backBtn}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.backBtnText,
+                                                        {
+                                                            color: schemeBackgroundColor,
+                                                        },
+                                                    ]}
+                                                >
+                                                    Go Back
+                                                </Text>
+                                            </TouchableOpacity>
                                         </View>
-
-                                        {/* Submit and Go Back Buttons */}
-                                        <TouchableOpacity
-                                            onPress={handleSubmit}
-                                            style={styles.submitBtn}
-                                        >
-                                            <Text style={styles.submitBtnText}>
-                                                Create Account
-                                            </Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            onPress={() =>
-                                                handleButtonNavigation(
-                                                    navigation,
-                                                    'Auth',
-                                                    'Landing'
-                                                )
-                                            }
-                                            style={styles.backBtn}
-                                        >
-                                            <Text style={styles.backBtnText}>
-                                                Go Back
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                )}
-                            </Formik>
-                        </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
+                                    )}
+                                </Formik>
+                            </View>
+                        </ScrollView>
+                    </KeyboardAvoidingView>
+                </TouchableWithoutFeedback>
+            </ImageBackground>
             <Toast />
         </SafeAreaView>
     );
@@ -382,7 +475,6 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         flex: 1,
-        backgroundColor: colors.backgroundColor('dark'), // Dark background for animated section
     },
     scrollView: {
         flexGrow: 1,
@@ -394,7 +486,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     formContainer: {
-        backgroundColor: colors.backgroundColor('dark'),
         padding: 20,
         borderRadius: 20,
         width: '90%',
@@ -405,11 +496,9 @@ const styles = StyleSheet.create({
     inputStyle: {
         height: 45,
         borderWidth: 1,
-        borderColor: colors.textColor('dark'), // Static dark border color
         borderRadius: 20,
         padding: 10,
         paddingHorizontal: 20,
-        color: colors.textColor('dark'),
     },
     errorTxt: {
         paddingHorizontal: 20,
@@ -422,7 +511,6 @@ const styles = StyleSheet.create({
         fontSize: 22,
     },
     title: {
-        color: colors.textColor('dark'),
         fontSize: 15,
         marginBottom: 20,
         textAlign: 'left',
@@ -454,7 +542,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     backBtnText: {
-        color: colors.textColor('light'),
         textAlign: 'center',
         fontWeight: 'bold',
     },

@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-    value: {},
+    user: {},
 };
 
 export const userSessionSlice = createSlice({
@@ -13,7 +13,7 @@ export const userSessionSlice = createSlice({
             // doesn't actually mutate the state because it uses the Immer library,
             // which detects changes to a "draft state" and produces a brand new
             // immutable state based off those changes
-            state.value = action.payload.user;
+            state.user = action.payload.user;
         },
     },
 });

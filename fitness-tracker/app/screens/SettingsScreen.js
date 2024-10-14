@@ -39,11 +39,16 @@ import { SettingsScreenController } from '../controllers/SettingsScreenControlle
 
 // Redux
 import { useDispatch, useSelector } from 'react-redux';
-import { setUserSession } from '../store/redux-slices/userSessionSlice.js';
+import { setUserSession } from '../store/reducers/userSessionSlice.js';
 import Toast from 'react-native-toast-message';
 
 function SettingsScreen({ navigation }) {
-    const userSession = useSelector((state) => state.userSession.value);
+    const route = useRoute();
+    const user = route.params?.user ?? null;
+
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
     const dispatch = useDispatch();
 
     const [loading, setLoading] = useState(false);
@@ -104,20 +109,35 @@ function SettingsScreen({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView
+            style={[
+                styles.container,
+                { backgroundColor: schemeBackgroundColor },
+            ]}
+        >
             <LoaderComp enabled={loading} />
-            <Card style={styles.card}>
+            <Card
+                style={[
+                    styles.card,
+                    {
+                        backgroundColor: schemeBackgroundColor,
+                    },
+                ]}
+            >
                 <Card.Title left={LeftContent} />
                 <Card.Content>
-                    <Text variant="bodyMedium" style={styles.cardText}>
-                        {userSession.email}
+                    <Text
+                        variant="bodyMedium"
+                        style={{ color: schemeTextColor }}
+                    >
+                        {user.email}
                     </Text>
                 </Card.Content>
             </Card>
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.list}>
                     <List.Section>
-                        <List.Subheader style={styles.listSubheader}>
+                        <List.Subheader style={{ color: schemeTextColor }}>
                             Settings
                         </List.Subheader>
                         <TouchableOpacity
@@ -130,15 +150,15 @@ function SettingsScreen({ navigation }) {
                             }
                         >
                             <List.Item
-                                titleStyle={styles.listItem}
-                                style={styles.listItem}
+                                titleStyle={{ color: schemeTextColor }}
+                                style={{ color: schemeTextColor }}
                                 title="Change Your Pin"
                                 left={() => (
                                     <FontAwesomeIcon
                                         style={styles.icon}
                                         icon={faLock}
                                         size={20}
-                                        color={colors.textColor('dark')}
+                                        color={schemeTextColor}
                                     />
                                 )}
                             />
@@ -146,14 +166,14 @@ function SettingsScreen({ navigation }) {
 
                         <TouchableOpacity onPress={handleLogoutPress}>
                             <List.Item
-                                titleStyle={styles.listItem}
+                                titleStyle={{ color: schemeTextColor }}
                                 title="Logout"
                                 left={() => (
                                     <FontAwesomeIcon
                                         style={styles.icon}
                                         icon={faDoorOpen}
                                         size={20}
-                                        color={colors.textColor('dark')}
+                                        color={schemeTextColor}
                                     />
                                 )}
                             />
@@ -161,7 +181,7 @@ function SettingsScreen({ navigation }) {
                     </List.Section>
 
                     <List.Section>
-                        <List.Subheader style={styles.listSubheader}>
+                        <List.Subheader style={{ color: schemeTextColor }}>
                             Support
                         </List.Subheader>
                         <TouchableOpacity
@@ -174,14 +194,14 @@ function SettingsScreen({ navigation }) {
                             }
                         >
                             <List.Item
-                                titleStyle={styles.listItem}
+                                titleStyle={{ color: schemeTextColor }}
                                 title="FAQs"
                                 left={() => (
                                     <FontAwesomeIcon
                                         style={styles.icon}
                                         icon={faQuestion}
                                         size={20}
-                                        color={colors.textColor('dark')}
+                                        color={schemeTextColor}
                                     />
                                 )}
                             />
@@ -189,19 +209,19 @@ function SettingsScreen({ navigation }) {
                     </List.Section>
 
                     <List.Section>
-                        <List.Subheader style={styles.listSubheader}>
+                        <List.Subheader style={{ color: schemeTextColor }}>
                             Us
                         </List.Subheader>
                         <TouchableOpacity onPress={onShare}>
                             <List.Item
-                                titleStyle={styles.listItem}
+                                titleStyle={{ color: schemeTextColor }}
                                 title="Share"
                                 left={() => (
                                     <FontAwesomeIcon
                                         style={styles.icon}
                                         icon={faShare}
                                         size={20}
-                                        color={colors.textColor('dark')}
+                                        color={schemeTextColor}
                                     />
                                 )}
                             />
@@ -209,14 +229,14 @@ function SettingsScreen({ navigation }) {
 
                         <TouchableOpacity>
                             <List.Item
-                                titleStyle={styles.listItem}
+                                titleStyle={{ color: schemeTextColor }}
                                 title="Rate Us"
                                 left={() => (
                                     <FontAwesomeIcon
                                         style={styles.icon}
                                         icon={faStar}
                                         size={20}
-                                        color={colors.textColor('dark')}
+                                        color={schemeTextColor}
                                     />
                                 )}
                             />
@@ -224,16 +244,6 @@ function SettingsScreen({ navigation }) {
                     </List.Section>
                 </View>
             </ScrollView>
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => navigation.goBack()}
-            >
-                <FontAwesomeIcon
-                    icon={faArrowLeft}
-                    size={25}
-                    color={colors.textColor('light')}
-                />
-            </TouchableOpacity>
             <Toast />
         </SafeAreaView>
     );
@@ -243,27 +253,16 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         flex: 1,
-        backgroundColor: colors.backgroundColor('dark'),
     },
     card: {
         marginTop: 20,
         marginHorizontal: '7%',
-        backgroundColor: colors.backgroundColor('dark'),
-    },
-    cardText: {
-        color: colors.textColor('dark'),
     },
     scrollContainer: {
         paddingVertical: 5,
     },
     list: {
         marginHorizontal: 20,
-    },
-    listSubheader: {
-        color: colors.textColor('dark'),
-    },
-    listItem: {
-        color: colors.textColor('dark'),
     },
     icon: {
         marginLeft: 15,

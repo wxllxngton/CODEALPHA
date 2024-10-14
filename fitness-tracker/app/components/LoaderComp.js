@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ImageBackground, Keyboard } from 'react-native';
-import { colors } from '../utils/config'; // Assuming your colors config includes a way to determine the theme
+import { colors } from '../utils/config'; // Assuming your colors config includes a way to determine the mode
+import { useSelector } from 'react-redux';
 
 // Pre-load both light and dark loader images
 const lightLoader = require('../assets/loader-light-mode.gif');
@@ -9,14 +10,19 @@ const darkLoader = require('../assets/loader-dark-mode.gif');
 /**
  * LoaderComp Component
  *
- * Dynamically displays a loader based on the current theme (light or dark).
+ * Dynamically displays a loader based on the current mode (light or dark).
  * Automatically dismisses the keyboard when the loader is shown.
  *
  * @param {boolean} enabled - Determines whether the loader should be visible.
- * @param {string} theme - The current theme, either 'light' or 'dark'.
+ * @param {string} mode - The current mode, either 'light' or 'dark'.
  * @returns {JSX.Element | null} - Returns the loader component if enabled, otherwise null.
  */
-function LoaderComp({ enabled = false, theme = 'light' }) {
+function LoaderComp({ enabled = false }) {
+    const mode = useSelector((state) => state.colorScheme.mode);
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
+
     useEffect(() => {
         // Dismiss the keyboard when the loader is enabled
         if (enabled) {
@@ -26,11 +32,16 @@ function LoaderComp({ enabled = false, theme = 'light' }) {
 
     if (!enabled) return null;
 
-    // Choose the loader image based on the theme
-    const loaderImage = theme === 'dark' ? darkLoader : lightLoader;
+    // Choose the loader image based on the mode
+    const loaderImage = mode === 'dark' ? darkLoader : lightLoader;
 
     return (
-        <View style={styles.container}>
+        <View
+            style={[
+                styles.container,
+                { backgroundColor: schemeBackgroundColor },
+            ]}
+        >
             <ImageBackground
                 style={styles.backgroundImage}
                 source={loaderImage} // Dynamically use the correct image
@@ -47,7 +58,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.backgroundColor('dark'), // Use the background based on the theme
         position: 'absolute',
         top: 0,
         bottom: 0,

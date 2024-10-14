@@ -1,25 +1,37 @@
 /**
- * Script contains the Bottom Navigation Bar Component.
+ * BottomNavBarComp renders the bottom navigation bar for the application,
+ * including navigation to Home and Settings screens. It uses `react-navigation`
+ * and FontAwesome for tab icons. The component customizes the tab bar to hide
+ * the labels and the top header bar on each screen.
  */
+
 import 'react-native-gesture-handler';
-import { Text, Platform, View, StyleSheet } from 'react-native';
-import { NavigationContainer, useRoute } from '@react-navigation/native';
+import React from 'react';
+import { Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-// Font awesome
+// FontAwesome icons
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faHome, faUserGroup, faGear } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faGear, faClock } from '@fortawesome/free-solid-svg-icons';
 
-// Importing the screens
-import {
-    HomeScreen,
-    InfoScreen,
-    SettingsScreen,
-    ChangeSaccoScreen,
-} from '../screens.js';
-import colors from '../config/colors.js';
+// Importing screens
+import { HomeScreen, SettingsScreen, TimerScreen } from '../screens/screens'; // Replace with actual import paths
+// Uncomment and import HomeScreen when it's ready
+// import { HomeScreen } from '../screens/screens';
 
+// Utils
+import { colors } from '../utils/config';
+import { useSelector } from 'react-redux';
+
+// Creating the BottomTab Navigator
 const Tab = createBottomTabNavigator();
+
+/**
+ * Configures the screen options for the bottom navigation tabs.
+ * - Removes labels
+ * - Hides the top header bar
+ * - Styles the tab bar with a fixed height and no elevation for a flat design.
+ */
 const screenOptions = {
     tabBarShowLabel: false,
     headerShown: false,
@@ -30,117 +42,86 @@ const screenOptions = {
         left: 0,
         elevation: 0,
         height: 60,
-        background: colors.theme(),
+        backgroundColor: 'white', // Adjust based on theme or scheme
     },
 };
+
+/**
+ * BottomNavBarComp renders the navigation bar with icons and manages screen transitions.
+ *
+ * @param {object} props - The props passed to the component, mainly for navigation handling.
+ * @returns {JSX.Element} The rendered BottomNavBarComp component.
+ */
 function BottomNavBarComp(props) {
-    const { user } = props.route.params;
+    // Fetch user and color scheme from Redux state
+    const user = useSelector((state) => state.userSession.user);
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
+    screenOptions.tabBarStyle['backgroundColor'] = schemeBackgroundColor;
+
     return (
-        <Tab.Navigator screenOptions={screenOptions}>
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                ...screenOptions,
+                tabBarIcon: ({ focused }) => {
+                    let iconName;
+                    if (route.name === 'Home') {
+                        iconName = faHome;
+                    } else if (route.name === 'Settings') {
+                        iconName = faGear;
+                    } else if (route.name === 'Timer') {
+                        iconName = faClock;
+                    }
+                    return (
+                        <View
+                            style={{
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <FontAwesomeIcon
+                                icon={iconName}
+                                size={20}
+                                color={
+                                    focused
+                                        ? colors.primary
+                                        : colors.metallicSilverShade
+                                }
+                            />
+                            <Text
+                                style={{ fontSize: 15, color: schemeTextColor }}
+                            >
+                                {route.name}
+                            </Text>
+                        </View>
+                    );
+                },
+            })}
+        >
+            {/* Uncomment when HomeScreen is available */}
+            {/* <Tab.Screen
+                name="Home"
+                initialParams={{ user }}
+                component={HomeScreen}
+            /> */}
+
+            <Tab.Screen
+                name="Timer"
+                initialParams={{ user }}
+                component={TimerScreen} // Replace with HomeScreen
+            />
+
             <Tab.Screen
                 name="Home"
-                initialParams={{ user: user }}
-                component={HomeScreen}
-                options={{
-                    tabBarIcon: ({ focused }) => {
-                        return (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <FontAwesomeIcon
-                                    icon={faHome}
-                                    size={20}
-                                    color={
-                                        focused
-                                            ? colors.primary
-                                            : colors.metallicSilverShade
-                                    }
-                                />
-                                <Text
-                                    style={{
-                                        fontSize: 15,
-                                        color: colors.black,
-                                    }}
-                                >
-                                    Home
-                                </Text>
-                            </View>
-                        );
-                    },
-                }}
+                initialParams={{ user }}
+                component={HomeScreen} // Replace with HomeScreen
             />
-            <Tab.Screen
-                name="ChangeSacco"
-                initialParams={{ user: user }}
-                component={ChangeSaccoScreen}
-                options={{
-                    tabBarIcon: ({ focused }) => {
-                        return (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <FontAwesomeIcon
-                                    icon={faUserGroup}
-                                    size={20}
-                                    color={
-                                        focused
-                                            ? colors.primary
-                                            : colors.metallicSilverShade
-                                    }
-                                />
-                                <Text
-                                    style={{
-                                        fontSize: 15,
-                                        color: colors.black,
-                                    }}
-                                >
-                                    Saccos
-                                </Text>
-                            </View>
-                        );
-                    },
-                }}
-            />
+
             <Tab.Screen
                 name="Settings"
-                initialParams={{ user: user }}
+                initialParams={{ user }}
                 component={SettingsScreen}
-                options={{
-                    tabBarIcon: ({ focused }) => {
-                        return (
-                            <View
-                                style={{
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <FontAwesomeIcon
-                                    icon={faGear}
-                                    size={20}
-                                    color={
-                                        focused
-                                            ? colors.primary
-                                            : colors.metallicSilverShade
-                                    }
-                                />
-                                <Text
-                                    style={{
-                                        fontSize: 15,
-                                        color: colors.black,
-                                    }}
-                                >
-                                    Settings
-                                </Text>
-                            </View>
-                        );
-                    },
-                }}
             />
         </Tab.Navigator>
     );

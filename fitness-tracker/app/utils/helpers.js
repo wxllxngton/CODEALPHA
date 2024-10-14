@@ -2,6 +2,9 @@
  * Script contains helper functions.
  */
 
+import { useSelector } from 'react-redux';
+import convertTime from 'convert-seconds';
+
 /**
  * Fetches data using the GET method and returns the response body as a JSON object.
  *
@@ -213,5 +216,30 @@ export const toTitleCase = function (value) {
             'Converting string to title case failure: ',
             error.message
         );
+    }
+};
+
+export const convertSecondsToTime = function (seconds) {
+    try {
+        // Assuming convertTime is available in the same scope
+        const timeObject = convertTime(seconds);
+
+        // Extract hours, minutes, and seconds from the time object
+        const { hours, minutes, seconds: remainingSeconds } = timeObject;
+
+        // Format the time into HH:MM:SS
+        const formattedTime = [
+            String(hours).padStart(2, '0'), // Pad hours to 2 digits
+            String(minutes).padStart(2, '0'), // Pad minutes to 2 digits
+            String(remainingSeconds).padStart(2, '0'), // Pad seconds to 2 digits
+        ].join(':');
+
+        return formattedTime;
+    } catch (error) {
+        console.error(
+            'Error occurred converting seconds to time: ',
+            error.message
+        );
+        throw new Error('Converting seconds to time failure: ' + error.message);
     }
 };

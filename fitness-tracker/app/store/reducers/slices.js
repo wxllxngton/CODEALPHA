@@ -1,5 +1,4 @@
 import userSessionSlice from './userSessionSlice';
-import counterSlice from './counterSlice';
-import activeFlashcardSetSlice from './activeFlashcardSetSlice';
+import colorSchemeSlice from './colorSchemeSlice';
 
-export { userSessionSlice, counterSlice, activeFlashcardSetSlice };
+export { userSessionSlice, colorSchemeSlice };

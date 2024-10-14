@@ -13,6 +13,7 @@ import {
     TouchableWithoutFeedback,
     KeyboardAvoidingView,
 } from 'react-native';
+import { useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
 
 // Fontawesome
@@ -52,6 +53,9 @@ const ChangePinSchema = Yup.object().shape({
 });
 
 function ChangePinScreen({ navigation }) {
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
     const [loading, setLoading] = useState(false);
     const [changePinScreenController, setChangePinScreenController] = useState(
         new ChangePinScreenController()
@@ -59,7 +63,12 @@ function ChangePinScreen({ navigation }) {
     const maxLengthPin = 4;
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView
+            style={[
+                styles.container,
+                { backgroundColor: schemeBackgroundColor },
+            ]}
+        >
             <BackgroundAnimation />
             <LoaderComp enabled={loading} />
             <HeaderComp
@@ -71,7 +80,10 @@ function ChangePinScreen({ navigation }) {
 
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAvoidingView
-                    style={styles.container}
+                    style={[
+                        styles.container,
+                        { backgroundColor: schemeBackgroundColor },
+                    ]}
                     behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                 >
                     <ScrollView contentContainerStyle={styles.scrollView}>
@@ -131,18 +143,38 @@ function ChangePinScreen({ navigation }) {
                                     handleSubmit,
                                     setFieldTouched,
                                 }) => (
-                                    <View style={styles.formContainer}>
+                                    <View
+                                        style={[
+                                            styles.formContainer,
+                                            {
+                                                backgroundColor:
+                                                    schemeBackgroundColor,
+                                            },
+                                        ]}
+                                    >
                                         <Text style={styles.appTitle}>
                                             {'Update your PIN'}
                                         </Text>
-                                        <Text style={styles.title}>
+                                        <Text
+                                            style={[
+                                                styles.title,
+                                                { color: schemeTextColor },
+                                            ]}
+                                        >
                                             Kindly update your details.
                                         </Text>
 
                                         {/* New PIN Input */}
                                         <View style={styles.inputWrapper}>
                                             <TextInput
-                                                style={styles.inputStyle}
+                                                style={[
+                                                    styles.inputStyle,
+                                                    {
+                                                        borderColor:
+                                                            schemeTextColor,
+                                                        color: schemeTextColor,
+                                                    },
+                                                ]}
                                                 placeholder="New PIN"
                                                 placeholderTextColor={
                                                     colors.gray
@@ -172,7 +204,14 @@ function ChangePinScreen({ navigation }) {
                                         {/* Confirm PIN Input */}
                                         <View style={styles.inputWrapper}>
                                             <TextInput
-                                                style={styles.inputStyle}
+                                                style={[
+                                                    styles.inputStyle,
+                                                    {
+                                                        borderColor:
+                                                            schemeTextColor,
+                                                        color: schemeTextColor,
+                                                    },
+                                                ]}
                                                 placeholder="Confirm PIN"
                                                 placeholderTextColor={
                                                     colors.gray
@@ -206,7 +245,14 @@ function ChangePinScreen({ navigation }) {
                                             onPress={handleSubmit}
                                             style={styles.submitBtn}
                                         >
-                                            <Text style={styles.submitBtnText}>
+                                            <Text
+                                                style={[
+                                                    styles.submitBtnText,
+                                                    {
+                                                        color: schemeBackgroundColor,
+                                                    },
+                                                ]}
+                                            >
                                                 Change PIN
                                             </Text>
                                         </TouchableOpacity>
@@ -222,7 +268,14 @@ function ChangePinScreen({ navigation }) {
                                             }
                                             style={styles.backBtn}
                                         >
-                                            <Text style={styles.backBtnText}>
+                                            <Text
+                                                style={[
+                                                    styles.backBtnText,
+                                                    {
+                                                        color: schemeBackgroundColor,
+                                                    },
+                                                ]}
+                                            >
                                                 Go Back
                                             </Text>
                                         </TouchableOpacity>
@@ -242,7 +295,6 @@ const styles = StyleSheet.create({
     container: {
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         flex: 1,
-        backgroundColor: colors.backgroundColor('dark'),
     },
     scrollView: {
         flexGrow: 1,
@@ -254,7 +306,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     formContainer: {
-        backgroundColor: colors.backgroundColor('dark'),
         padding: 20,
         borderRadius: 20,
         width: '90%',
@@ -265,11 +316,9 @@ const styles = StyleSheet.create({
     inputStyle: {
         height: 45,
         borderWidth: 1,
-        borderColor: colors.textColor('dark'),
         borderRadius: 20,
         padding: 10,
         paddingHorizontal: 20,
-        color: colors.textColor('dark'),
     },
     errorTxt: {
         paddingHorizontal: 20,
@@ -282,7 +331,6 @@ const styles = StyleSheet.create({
         fontSize: 22,
     },
     title: {
-        color: colors.textColor('dark'),
         fontSize: 15,
         marginBottom: 20,
         textAlign: 'left',
@@ -294,7 +342,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     submitBtnText: {
-        color: colors.textColor('light'),
         textAlign: 'center',
         fontWeight: 'bold',
     },
@@ -304,7 +351,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
     },
     backBtnText: {
-        color: colors.textColor('light'),
         textAlign: 'center',
         fontWeight: 'bold',
     },

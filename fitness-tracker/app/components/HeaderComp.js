@@ -13,6 +13,7 @@ import {
 
 // Components
 import { NavigateIconComp } from './NavigateIconComp';
+import { useSelector } from 'react-redux';
 
 function HeaderComp(props) {
     const {
@@ -24,6 +25,9 @@ function HeaderComp(props) {
         navigationParams,
         flipDefaultIcon,
     } = props;
+    const { schemeTextColor, schemeBackgroundColor } = useSelector(
+        (state) => state.colorScheme.scheme
+    );
 
     console.log('Navigation: ', navigation);
 
@@ -41,17 +45,17 @@ function HeaderComp(props) {
                     }}
                     icon={faArrowLeft}
                     size={20}
-                    color={colors.textColor('dark')}
+                    color={schemeTextColor}
                 />
             ) : (
                 <FontAwesomeIcon
                     style={{ marginRight: 5 }}
                     icon={icon}
                     size={20}
-                    color={colors.textColor('dark')}
+                    color={schemeTextColor}
                 />
             )}
-            <Text style={{ color: colors.textColor('dark') }}>
+            <Text style={{ color: schemeTextColor }}>
                 {heading.toUpperCase()}
             </Text>
             {/* FAQ icon */}
@@ -67,7 +71,7 @@ function HeaderComp(props) {
                     }}
                     icon={faQuestionCircle}
                     size={20}
-                    color={colors.textColor('dark')}
+                    color={schemeTextColor}
                 />
             ) : null}
             {/* Settings icon */}
@@ -83,7 +87,7 @@ function HeaderComp(props) {
                     }}
                     icon={faGear}
                     size={20}
-                    color={colors.textColor('dark')}
+                    color={schemeTextColor}
                 />
             ) : null}
         </View>
