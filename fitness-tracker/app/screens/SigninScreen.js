@@ -86,11 +86,14 @@ function SigninScreen({ navigation }) {
                 { backgroundColor: schemeBackgroundColor },
             ]}
         >
-            {/* Background animation */}
-            <BackgroundAnimation />
-
             {/* Loader component */}
             <LoaderComp enabled={loading} />
+
+            {/* StatusBar component  */}
+            <StatusBar translucent />
+
+            {/* Background animation */}
+            <BackgroundAnimation />
 
             {/* Header component */}
             <HeaderComp

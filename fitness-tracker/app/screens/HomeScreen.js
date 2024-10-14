@@ -4,7 +4,7 @@
  */
 
 import { useRoute } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     SafeAreaView,
     Platform,
@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Card, ProgressBar } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
+// import { startCounter, stopCounter } from 'react-native-accurate-step-counter';
 
 // Font Awesome Icons
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -44,9 +45,28 @@ function HomeScreen() {
     const [loading, setLoading] = useState(false);
 
     // Dummy data for steps (replace with actual pedometer data)
-    const dailySteps = 8246;
+    // const [dailySteps, setDailySteps] = useState(0);
+    // const dailySteps = 5000;
     const dailyGoal = 12000;
     const progress = dailySteps / dailyGoal;
+
+    // useEffect(() => {
+    //     const config = {
+    //         default_threshold: 15.0,
+    //         default_delay: 150000000,
+    //         cheatInterval: 3000,
+    //         onStepCountChange: (stepCount) => {
+    //             setSteps(stepCount);
+    //         },
+    //         onCheat: () => {
+    //             console.log('User is Cheating');
+    //         },
+    //     };
+    //     startCounter(config);
+    //     return () => {
+    //         stopCounter();
+    //     };
+    // }, []);
 
     return (
         <SafeAreaView
@@ -57,6 +77,9 @@ function HomeScreen() {
         >
             {/* Loader Component */}
             <LoaderComp enabled={loading} />
+
+            {/* StatusBar Component */}
+            <StatusBar translucent />
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.cardContainer}>

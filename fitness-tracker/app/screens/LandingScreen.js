@@ -49,6 +49,9 @@ function LandingScreen({ navigation }) {
 
     return (
         <View style={{ flex: 1 }}>
+            {/* StatusBar Component */}
+            <StatusBar translucent />
+
             <ImageBackground
                 source={backgroundImage}
                 resizeMode="cover"

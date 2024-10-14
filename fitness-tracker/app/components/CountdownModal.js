@@ -35,7 +35,10 @@ const CountdownModal = ({ visible, onClose, onStartCountdown }) => {
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Hours:</Text>
                         <TextInput
-                            keyboardType="numeric"
+                            autoFocus={true}
+                            showSoftInputOnFocus={true}
+                            returnKeyType="done"
+                            keyboardType="number-pad"
                             value={hours.toString()}
                             onChangeText={(text) =>
                                 setHours(Math.max(0, parseInt(text) || 0))
@@ -46,7 +49,10 @@ const CountdownModal = ({ visible, onClose, onStartCountdown }) => {
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Minutes:</Text>
                         <TextInput
-                            keyboardType="numeric"
+                            autoFocus={true}
+                            showSoftInputOnFocus={true}
+                            returnKeyType="done"
+                            keyboardType="number-pad"
                             value={minutes.toString()}
                             onChangeText={(text) =>
                                 setMinutes(
@@ -62,7 +68,10 @@ const CountdownModal = ({ visible, onClose, onStartCountdown }) => {
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Seconds:</Text>
                         <TextInput
-                            keyboardType="numeric"
+                            autoFocus={true}
+                            showSoftInputOnFocus={true}
+                            returnKeyType="done"
+                            keyboardType="number-pad"
                             value={seconds.toString()}
                             onChangeText={(text) =>
                                 setSeconds(

@@ -1,8 +1,8 @@
 import react from 'react';
 
 export const colors = {
-    primary: '#83B4FF',
-    secondary: '#FFCE83',
+    primary: '#0076FE',
+    secondary: '#FE8800',
     black: '#030000',
     complementaryBlack: '#000303',
     white: '#efffff',

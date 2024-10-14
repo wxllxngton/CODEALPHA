@@ -97,7 +97,7 @@ function TimerScreen() {
                         </Text>
                         {renderButtons(countdownRef)}
                         <Button
-                            title="Edit Countdown Time"
+                            title="Set Countdown Time"
                             onPress={() => setIsCountdownModalOpen(true)}
                         />
                     </View>
@@ -114,7 +114,11 @@ function TimerScreen() {
                 { backgroundColor: schemeBackgroundColor },
             ]}
         >
+            {/* Loader Component */}
             <LoaderComp enabled={loading} />
+
+            {/* StatusBar Component */}
+            <StatusBar translucent />
 
             <View style={{ width: '75%' }}>
                 <SegmentedControlTab

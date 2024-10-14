@@ -106,6 +106,9 @@ function SignupScreen({ navigation }) {
             {/* Loader Component */}
             <LoaderComp enabled={loading} />
 
+            {/* StatusBar Component */}
+            <StatusBar translucent />
+
             {/* AnimatedBG Component */}
             <BackgroundAnimation />
 

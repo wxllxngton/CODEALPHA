@@ -115,7 +115,12 @@ function SettingsScreen({ navigation }) {
                 { backgroundColor: schemeBackgroundColor },
             ]}
         >
+            {/* Loader Component */}
             <LoaderComp enabled={loading} />
+
+            {/* StatusBar Component */}
+            <StatusBar translucent />
+
             <Card
                 style={[
                     styles.card,
