@@ -515,7 +515,6 @@ const styles = StyleSheet.create({
     inputStyle: {
         height: 45,
         borderWidth: 1,
-        borderRadius: 20,
         padding: 10,
         paddingHorizontal: 20,
     },
