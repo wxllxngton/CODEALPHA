@@ -40,8 +40,8 @@ const urls = {
 
 // Define some bullets
 const bullets = [
-    'How to use the Flashcards app to study',
-    'How to make create a flashcard set',
+    'How to use the apt app to track your fitness',
+    'How to make calculate calorie intake',
 ];
 
 const FAQScreen = ({ navigation }) => {

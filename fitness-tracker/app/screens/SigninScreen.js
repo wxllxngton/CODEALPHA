@@ -41,7 +41,7 @@ import { SigninScreenController } from '../controllers/SigninScreenController';
 import { setUserSession } from '../store/reducers/userSessionSlice';
 import { useDispatch, useSelector } from 'react-redux';
 
-const backgroundImage = require('../assets/landing-screen-wallpaper.webp');
+const backgroundImage = require('../assets/auth-screens-wallpaper.webp');
 
 // Validation schema for the signin form
 const SigninSchema = Yup.object().shape({
@@ -370,6 +370,7 @@ const styles = StyleSheet.create({
     inputStyle: {
         height: 45,
         borderWidth: 1,
+        borderRadius: 20,
         padding: 10,
         paddingHorizontal: 20,
     },
@@ -392,7 +393,7 @@ const styles = StyleSheet.create({
     submitBtn: {
         padding: 15,
         borderWidth: 1,
-        // borderRadius: 20,
+        borderRadius: 20,
         marginTop: 10,
         marginBottom: 10,
     },
@@ -403,7 +404,7 @@ const styles = StyleSheet.create({
     backBtn: {
         padding: 15,
         borderWidth: 1,
-        // borderRadius: 20,
+        borderRadius: 20,
     },
     backBtnText: {
         textAlign: 'center',

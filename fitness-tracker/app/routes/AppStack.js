@@ -87,12 +87,14 @@ function AppContainer() {
                 screenOptions={{ headerShown: false }}
             >
                 <Stack.Screen name="Auth" component={AuthStackComp} />
-                {session && session?.user && (
+                {/* {session && session?.user && (
                     <>
                         <Stack.Screen name="App" component={BottomNavBarComp} />
                         <Stack.Screen name="Utils" component={UtilsStackComp} />
                     </>
-                )}
+                )} */}
+                <Stack.Screen name="App" component={BottomNavBarComp} />
+                <Stack.Screen name="Utils" component={UtilsStackComp} />
             </Stack.Navigator>
         </NavigationContainer>
     );

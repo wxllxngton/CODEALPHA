@@ -243,7 +243,15 @@ function ChangePinScreen({ navigation }) {
                                         {/* Submit Button */}
                                         <TouchableOpacity
                                             onPress={handleSubmit}
-                                            style={styles.submitBtn}
+                                            style={[
+                                                styles.submitBtn,
+                                                {
+                                                    backgroundColor:
+                                                        schemeTextColor,
+                                                    borderColor:
+                                                        schemeBackgroundColor,
+                                                },
+                                            ]}
                                         >
                                             <Text
                                                 style={[
@@ -266,7 +274,15 @@ function ChangePinScreen({ navigation }) {
                                                     'Settings'
                                                 )
                                             }
-                                            style={styles.backBtn}
+                                            style={[
+                                                styles.backBtn,
+                                                {
+                                                    backgroundColor:
+                                                        schemeTextColor,
+                                                    borderColor:
+                                                        schemeBackgroundColor,
+                                                },
+                                            ]}
                                         >
                                             <Text
                                                 style={[

@@ -5,7 +5,7 @@
  * The API key is retrieved from environment variables for security.
  */
 
-class CaloriesBurnedModel {
+export default class CaloriesBurnedModel {
     /**
      * Constructor initializes the API URL and retrieves the API key from environment variables.
      * The URL requires the activity, weight, and duration parameters.
@@ -37,7 +37,8 @@ class CaloriesBurnedModel {
                 headers: {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
-                    'X-Api-Key': this.API_KEY, // Use the API key from the constructor
+                    // 'X-Api-Key': this.API_KEY, // Use the API key from the constructor
+                    'X-Api-Key': 'iQe65dAUrP3MxYRHLk6Xpw==ES5st6AkblhlJYJo', // Use the API key from the constructor
                 },
             });
 

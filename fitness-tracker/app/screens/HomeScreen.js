@@ -21,6 +21,8 @@ import {
     faCutlery,
     faHeartPulse,
     faBell,
+    faBurn,
+    faWalking,
 } from '@fortawesome/free-solid-svg-icons';
 
 // Utils
@@ -173,13 +175,14 @@ function HomeScreen() {
         await homeScreenController.handleSetDailyStepsGoal(
             newGoal,
             (data) => {
+                const { dailySteps } = data;
                 showToast({
                     Toast,
                     type: 'success',
                     text1: 'Daily step goal updated',
-                    text2: `New goal is ${data}`,
+                    text2: `New goal is ${dailySteps}`,
                 });
-                setDailyStepsGoal(data);
+                setDailyStepsGoal(dailySteps);
             },
             (error) => {
                 showToast({
@@ -195,11 +198,45 @@ function HomeScreen() {
 
     /**
      * Handles adding a calories burned activity.
-     * @param {Object} activity - The activity information.
+     *
+     * @param {Object} activityDetails - The activity information (e.g., { activity: 'running', weight: 70, duration: 30 }).
      */
-    const handleAddCaloriesBurnedActivity = (activity) => {
-        console.log('Activity added:', activity);
-        // You would typically update state or backend here.
+    const handleAddCaloriesBurnedActivity = async (activityDetails) => {
+        setLoading(true); // Show loader during the process
+
+        // Call the controller's method to add the calories burned activity
+        await homeScreenController.handleAddCaloriesBurnedActivity(
+            activityDetails,
+            (data) => {
+                const { caloriesBurned } = data;
+
+                // Show a success toast notification with the calculated calories burned
+                showToast({
+                    Toast,
+                    type: 'success',
+                    text1: 'Activity added successfully!',
+                    text2: `You burned ${caloriesBurned} calories.`,
+                });
+
+                // Update the state with the new calories burned value
+                setCurrentCaloriesBurned(
+                    (prevValue) => prevValue + caloriesBurned
+                );
+            },
+            (error) => {
+                // Show an error toast notification if something goes wrong
+                showToast({
+                    Toast,
+                    type: 'error',
+                    text1: 'Error adding activity',
+                    text2:
+                        error.message ||
+                        'Failed to add calories burned activity.',
+                });
+            }
+        );
+
+        setLoading(false); // Hide loader after completion
     };
 
     return (
@@ -269,7 +306,7 @@ function HomeScreen() {
                                     Daily Steps
                                 </Text>
                                 <FontAwesomeIcon
-                                    icon={faHeartPulse}
+                                    icon={faWalking}
                                     size={20}
                                     color={schemeTextColor}
                                 />
@@ -321,7 +358,7 @@ function HomeScreen() {
                                     Calories Burned
                                 </Text>
                                 <FontAwesomeIcon
-                                    icon={faCutlery}
+                                    icon={faBurn}
                                     size={20}
                                     color={schemeTextColor}
                                 />
@@ -332,16 +369,15 @@ function HomeScreen() {
                                     { color: schemeTextColor },
                                 ]}
                             >
-                                {parseFloat(
-                                    currentCaloriesBurned
-                                ).toLocaleString()}
+                                {currentCaloriesBurned.toLocaleString()}
+                                {'cal'}
                             </Text>
-                            <ProgressBar
+                            {/* <ProgressBar
                                 progress={caloriesBurnedProgress}
                                 color={colors.primary}
                                 style={styles.progressBar}
-                            />
-                            <Text
+                            /> */}
+                            {/* <Text
                                 style={[
                                     styles.goalText,
                                     { color: schemeTextColor },
@@ -349,7 +385,7 @@ function HomeScreen() {
                             >
                                 {Math.round(caloriesBurnedProgress * 100)}% of
                                 calories burned goal
-                            </Text>
+                            </Text> */}
                         </Card>
                     </TouchableOpacity>
                 </View>
@@ -358,15 +394,17 @@ function HomeScreen() {
                 <DailyStepsGoalModal
                     isVisible={isStepsModalVisible}
                     onClose={() => setIsStepsModalVisible(false)}
-                    onSubmit={handleSetDailyStepsGoal}
+                    onSetGoal={handleSetDailyStepsGoal}
                     currentGoal={dailyStepsGoal}
+                    isDarkMode={mode === 'dark' ? true : false}
                 />
 
                 {/* CaloriesBurnedModal */}
                 <CaloriesBurnedModal
                     isVisible={isCaloriesModalVisible}
                     onClose={() => setIsCaloriesModalVisible(false)}
-                    onSubmit={handleAddCaloriesBurnedActivity}
+                    onAddActivity={handleAddCaloriesBurnedActivity}
+                    isDarkMode={mode === 'dark' ? true : false}
                 />
             </ScrollView>
         </SafeAreaView>
@@ -381,6 +419,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        marginTop: 5,
         padding: 16,
     },
     headerLeft: {
@@ -388,19 +427,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatar: {
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         borderRadius: 25,
     },
     headerText: {
         marginLeft: 10,
     },
     greeting: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '500',
     },
     userName: {
-        fontSize: 16,
+        fontSize: 14,
         color: 'gray',
     },
     headerRight: {

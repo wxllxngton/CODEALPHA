@@ -20,12 +20,18 @@ const CaloriesBurnedModal = ({
 }) => {
     const [activity, setActivity] = useState('');
     const [duration, setDuration] = useState('');
+    const [weight, setWeight] = useState('');
 
     const handleAddActivity = () => {
-        if (activity && duration) {
-            onAddActivity({ activity, duration: parseInt(duration, 10) });
+        if (activity && duration && weight) {
+            onAddActivity({
+                activity,
+                duration: parseInt(duration, 10),
+                weight: parseFloat(weight),
+            });
             setActivity('');
             setDuration('');
+            setWeight('');
             onClose();
         }
     };
@@ -100,6 +106,21 @@ const CaloriesBurnedModal = ({
                             value={duration}
                             keyboardType="number-pad"
                             placeholder="Enter duration (minutes)"
+                            placeholderTextColor={
+                                isDarkMode ? colors.gray : colors.darkGray
+                            }
+                        />
+                        <TextInput
+                            style={[
+                                styles.input,
+                                isDarkMode
+                                    ? styles.darkModeInput
+                                    : styles.lightModeInput,
+                            ]}
+                            onChangeText={setWeight}
+                            value={weight}
+                            keyboardType="decimal-pad"
+                            placeholder="Enter your weight (kg)"
                             placeholderTextColor={
                                 isDarkMode ? colors.gray : colors.darkGray
                             }
@@ -188,7 +209,7 @@ const styles = StyleSheet.create({
     },
     darkModeInput: {
         backgroundColor: colors.darkGray,
-        color: colors.black,
+        color: colors.white,
         borderColor: colors.gray,
     },
     button: {
