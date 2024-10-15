@@ -1,23 +1,3 @@
-/**
- * HomeScreen
- *
- * This component renders the Home screen for users, displaying an overview of their fitness data
- * such as daily steps, progress toward fitness goals, calories burned, and distance covered.
- * It integrates a pedometer to track steps and shows progress through visual elements like progress bars.
- *
- * Main Features:
- * - Displays user's steps, calories burned, and distance covered.
- * - Uses a pedometer to track steps in real-time.
- * - Calculates and shows the progress towards a daily goal.
- * - Supports dark/light color schemes based on user preference.
- *
- * Dependencies:
- * - expo-sensors (Pedometer)
- * - react-native-paper (ProgressBar, Card)
- * - react-redux (Color scheme selector)
- * - react-native-toast-message (Toast notifications)
- */
-
 import { useRoute } from '@react-navigation/native';
 import React, { useState, useEffect } from 'react';
 import {
@@ -28,6 +8,8 @@ import {
     StyleSheet,
     Text,
     View,
+    Image,
+    TouchableOpacity,
 } from 'react-native';
 import { Card, ProgressBar } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
@@ -38,39 +20,54 @@ import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import {
     faCutlery,
     faHeartPulse,
-    faRunning,
+    faBell,
 } from '@fortawesome/free-solid-svg-icons';
 
 // Utils
 import { colors } from '../utils/config';
+import { showToast } from '../utils/helpers';
 
 // Components
 import LoaderComp from '../components/LoaderComp';
+import DailyStepsGoalModal from '../components/DailyStepsGoalModal';
+import CaloriesBurnedModal from '../components/CaloriesBurnedModal';
 
 // Redux
 import { useSelector } from 'react-redux';
+import HomeScreenController from '../controllers/HomeScreenController';
 
 function HomeScreen() {
     const route = useRoute();
     const user = route.params?.user ?? null;
 
+    const mode = useSelector((state) => state.colorScheme.mode);
     const { schemeTextColor, schemeBackgroundColor } = useSelector(
         (state) => state.colorScheme.scheme
     );
     const [loading, setLoading] = useState(false);
 
+    // Pedometer state
     const [isPedometerAvailable, setIsPedometerAvailable] =
         useState('checking');
     const [pastStepCount, setPastStepCount] = useState(0);
     const [currentStepCount, setCurrentStepCount] = useState(0);
+    const [dailyStepsGoal, setDailyStepsGoal] = useState(0);
+    const [dailyStepsProgress, setDailyStepsProgress] = useState(0);
+    const [isStepsModalVisible, setIsStepsModalVisible] = useState(false);
 
-    // Dummy data for steps (replace with actual pedometer data)
-    const dailyGoal = 12000;
-    const progress = currentStepCount / dailyGoal;
+    // Calories state
+    const [currentCaloriesBurned, setCurrentCaloriesBurned] = useState(0);
+    const [caloriesBurnedGoal, setCaloriesBurnedGoal] = useState(0);
+    const [caloriesBurnedProgress, setCaloriesBurnedProgress] = useState(0);
+    const [isCaloriesModalVisible, setIsCaloriesModalVisible] = useState(false);
+
+    // Controller
+    const [homeScreenController, setHomeScreenController] = useState(
+        new HomeScreenController()
+    );
 
     /**
-     * Subscribes to the pedometer sensor and tracks the step count.
-     * If available, it fetches the past step count and sets up a listener for live updates.
+     * Subscribes to pedometer updates and retrieves the step count.
      */
     const subscribe = async () => {
         const isAvailable = await Pedometer.isAvailableAsync();
@@ -81,24 +78,129 @@ function HomeScreen() {
             const start = new Date();
             start.setDate(end.getDate() - 1);
 
-            const pastStepCountResult = await Pedometer.getStepCountAsync(
-                start,
-                end
-            );
-            if (pastStepCountResult) {
-                setPastStepCount(pastStepCountResult.steps);
+            try {
+                const pastStepCountResult = await Pedometer.getStepCountAsync(
+                    start,
+                    end
+                );
+                if (pastStepCountResult) {
+                    setPastStepCount(pastStepCountResult.steps);
+                }
+            } catch (error) {
+                console.error('Error fetching past step count:', error);
             }
 
             return Pedometer.watchStepCount((result) => {
                 setCurrentStepCount(result.steps);
             });
         }
+        return null;
     };
 
+    /**
+     * Initializes pedometer subscription on component mount.
+     */
     useEffect(() => {
-        const subscription = subscribe();
-        return () => subscription && subscription.remove();
+        let subscription;
+        const initializeSubscription = async () => {
+            subscription = await subscribe();
+        };
+
+        initializeSubscription();
+
+        return () => {
+            if (subscription) {
+                subscription.remove();
+            }
+        };
     }, []);
+
+    /**
+     * Updates daily steps progress whenever currentStepCount or dailyStepsGoal changes.
+     */
+    useEffect(() => {
+        setDailyStepsProgress(currentStepCount / dailyStepsGoal || 0);
+    }, [currentStepCount, dailyStepsGoal]);
+
+    /**
+     * Updates calories burned progress whenever currentCaloriesBurned or caloriesBurnedGoal changes.
+     */
+    useEffect(() => {
+        setCaloriesBurnedProgress(
+            currentCaloriesBurned / caloriesBurnedGoal || 0
+        );
+    }, [currentCaloriesBurned, caloriesBurnedGoal]);
+
+    /**
+     * Fetches the daily steps goal from the controller on component mount.
+     */
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                await homeScreenController.handleGetDailyStepsGoal(
+                    (data) => {
+                        setDailyStepsGoal(data);
+                    },
+                    (error) => {
+                        showToast({
+                            Toast,
+                            type: 'error',
+                            text1: 'Error fetching daily steps goal',
+                            text2: error.message,
+                        });
+                    }
+                );
+            } catch (error) {
+                console.error('Error occurred while fetching data:', error);
+                showToast({
+                    Toast,
+                    type: 'error',
+                    text1: 'Error fetching data',
+                    text2: error.message,
+                });
+            }
+        };
+
+        fetchData();
+    }, [homeScreenController]);
+
+    /**
+     * Handles setting a new daily steps goal.
+     * @param {number} newGoal - The new daily steps goal.
+     */
+    const handleSetDailyStepsGoal = async (newGoal) => {
+        setLoading(true); // Show loader during the process
+        await homeScreenController.handleSetDailyStepsGoal(
+            newGoal,
+            (data) => {
+                showToast({
+                    Toast,
+                    type: 'success',
+                    text1: 'Daily step goal updated',
+                    text2: `New goal is ${data}`,
+                });
+                setDailyStepsGoal(data);
+            },
+            (error) => {
+                showToast({
+                    Toast,
+                    type: 'error',
+                    text1: 'Error setting daily step goal',
+                    text2: error.message,
+                });
+            }
+        );
+        setLoading(false); // Hide loader after completion
+    };
+
+    /**
+     * Handles adding a calories burned activity.
+     * @param {Object} activity - The activity information.
+     */
+    const handleAddCaloriesBurnedActivity = (activity) => {
+        console.log('Activity added:', activity);
+        // You would typically update state or backend here.
+    };
 
     return (
         <SafeAreaView
@@ -107,232 +209,235 @@ function HomeScreen() {
                 { backgroundColor: schemeBackgroundColor },
             ]}
         >
-            {/* Loader Component */}
             <LoaderComp enabled={loading} />
-
-            {/* StatusBar Component */}
             <StatusBar translucent />
 
-            {/* Header */}
+            {/* Enhanced Header */}
             <View style={styles.header}>
-                <Text style={{ color: schemeTextColor }}>Hello 👋,</Text>
-                <Text style={{ color: schemeTextColor }}>{user.email}</Text>
-                <View
-                    style={[
-                        styles.headerDivider,
-                        { backgroundColor: schemeTextColor },
-                    ]}
-                />
+                <View style={styles.headerLeft}>
+                    <Image
+                        source={{ uri: 'https://via.placeholder.com/50' }}
+                        style={styles.avatar}
+                    />
+                    <View style={styles.headerText}>
+                        <Text
+                            style={[
+                                styles.greeting,
+                                { color: schemeTextColor },
+                            ]}
+                        >
+                            Hello 👋
+                        </Text>
+                        <Text
+                            style={[
+                                styles.userName,
+                                { color: schemeTextColor },
+                            ]}
+                        >
+                            {user.email}
+                        </Text>
+                    </View>
+                </View>
+                <View style={styles.headerRight}>
+                    <FontAwesomeIcon
+                        icon={faBell}
+                        size={20}
+                        color={schemeTextColor}
+                    />
+                </View>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 {/* Daily Steps Card */}
                 <View style={styles.cardContainer}>
-                    <Card
-                        style={[
-                            styles.card,
-                            { backgroundColor: schemeBackgroundColor },
-                        ]}
+                    <TouchableOpacity
+                        onPress={() => setIsStepsModalVisible(true)}
                     >
-                        <View style={styles.cardHeader}>
+                        <Card
+                            style={[
+                                styles.card,
+                                { backgroundColor: schemeBackgroundColor },
+                            ]}
+                        >
+                            <View style={styles.cardHeader}>
+                                <Text
+                                    style={[
+                                        styles.cardTitle,
+                                        { color: schemeTextColor },
+                                    ]}
+                                >
+                                    Daily Steps
+                                </Text>
+                                <FontAwesomeIcon
+                                    icon={faHeartPulse}
+                                    size={20}
+                                    color={schemeTextColor}
+                                />
+                            </View>
                             <Text
                                 style={[
-                                    styles.cardTitle,
+                                    styles.stepsText,
                                     { color: schemeTextColor },
                                 ]}
                             >
-                                Daily Steps
+                                {currentStepCount.toLocaleString()}
                             </Text>
-                            <FontAwesomeIcon
-                                icon={faHeartPulse}
-                                size={20}
-                                color={schemeTextColor}
+                            <ProgressBar
+                                progress={dailyStepsProgress}
+                                color={colors.primary}
+                                style={styles.progressBar}
                             />
-                        </View>
-                        <Text
-                            style={[
-                                styles.stepsText,
-                                { color: schemeTextColor },
-                            ]}
-                        >
-                            {currentStepCount.toLocaleString()}
-                        </Text>
-                        <ProgressBar
-                            progress={progress}
-                            color={colors.primary}
-                            style={styles.progressBar}
-                        />
-                        <Text
-                            style={[
-                                styles.goalText,
-                                { color: schemeTextColor },
-                            ]}
-                        >
-                            {Math.round(progress * 100)}% of daily goal
-                        </Text>
-                    </Card>
+                            <Text
+                                style={[
+                                    styles.goalText,
+                                    { color: schemeTextColor },
+                                ]}
+                            >
+                                {Math.round(dailyStepsProgress * 100)}% of daily
+                                goal
+                            </Text>
+                        </Card>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Calories Burned Card */}
                 <View style={styles.cardContainer}>
-                    <Card
-                        style={[
-                            styles.card,
-                            { backgroundColor: schemeBackgroundColor },
-                        ]}
+                    <TouchableOpacity
+                        onPress={() => setIsCaloriesModalVisible(true)}
                     >
-                        <View style={styles.cardHeader}>
+                        <Card
+                            style={[
+                                styles.card,
+                                { backgroundColor: schemeBackgroundColor },
+                            ]}
+                        >
+                            <View style={styles.cardHeader}>
+                                <Text
+                                    style={[
+                                        styles.cardTitle,
+                                        { color: schemeTextColor },
+                                    ]}
+                                >
+                                    Calories Burned
+                                </Text>
+                                <FontAwesomeIcon
+                                    icon={faCutlery}
+                                    size={20}
+                                    color={schemeTextColor}
+                                />
+                            </View>
                             <Text
                                 style={[
-                                    styles.cardTitle,
+                                    styles.stepsText,
                                     { color: schemeTextColor },
                                 ]}
                             >
-                                Calories Burned
+                                {parseFloat(
+                                    currentCaloriesBurned
+                                ).toLocaleString()}
                             </Text>
-                            <FontAwesomeIcon
-                                icon={faCutlery}
-                                size={20}
-                                color={schemeTextColor}
+                            <ProgressBar
+                                progress={caloriesBurnedProgress}
+                                color={colors.primary}
+                                style={styles.progressBar}
                             />
-                        </View>
-                        <Text
-                            style={[
-                                styles.stepsText,
-                                { color: schemeTextColor },
-                            ]}
-                        >
-                            {parseFloat('1000').toLocaleString()}
-                        </Text>
-                        <ProgressBar
-                            progress={progress}
-                            color={colors.primary}
-                            style={styles.progressBar}
-                        />
-                        <Text
-                            style={[
-                                styles.goalText,
-                                { color: schemeTextColor },
-                            ]}
-                        >
-                            {Math.round(progress * 100)}% of daily goal
-                        </Text>
-                    </Card>
+                            <Text
+                                style={[
+                                    styles.goalText,
+                                    { color: schemeTextColor },
+                                ]}
+                            >
+                                {Math.round(caloriesBurnedProgress * 100)}% of
+                                calories burned goal
+                            </Text>
+                        </Card>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Distance Covered Card */}
-                <View style={styles.cardContainer}>
-                    <Card
-                        style={[
-                            styles.card,
-                            { backgroundColor: schemeBackgroundColor },
-                        ]}
-                    >
-                        <View style={styles.cardHeader}>
-                            <Text
-                                style={[
-                                    styles.cardTitle,
-                                    { color: schemeTextColor },
-                                ]}
-                            >
-                                Distance Covered
-                            </Text>
-                            <FontAwesomeIcon
-                                icon={faRunning}
-                                size={20}
-                                color={schemeTextColor}
-                            />
-                        </View>
-                        <Text
-                            style={[
-                                styles.stepsText,
-                                { color: schemeTextColor },
-                            ]}
-                        >
-                            {'10km'.toLocaleString()}
-                        </Text>
-                        <ProgressBar
-                            progress={progress}
-                            color={colors.primary}
-                            style={styles.progressBar}
-                        />
-                        <Text
-                            style={[
-                                styles.goalText,
-                                { color: schemeTextColor },
-                            ]}
-                        >
-                            {Math.round(progress * 100)}% of daily goal
-                        </Text>
-                    </Card>
-                </View>
+                {/* DailyStepsGoalModal */}
+                <DailyStepsGoalModal
+                    isVisible={isStepsModalVisible}
+                    onClose={() => setIsStepsModalVisible(false)}
+                    onSubmit={handleSetDailyStepsGoal}
+                    currentGoal={dailyStepsGoal}
+                />
+
+                {/* CaloriesBurnedModal */}
+                <CaloriesBurnedModal
+                    isVisible={isCaloriesModalVisible}
+                    onClose={() => setIsCaloriesModalVisible(false)}
+                    onSubmit={handleAddCaloriesBurnedActivity}
+                />
             </ScrollView>
-
-            <Toast />
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         flex: 1,
     },
-    scrollContainer: {
-        flexGrow: 1,
-        paddingVertical: 20,
-        paddingHorizontal: 10,
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        padding: 16,
+    },
+    headerLeft: {
+        flexDirection: 'row',
         alignItems: 'center',
     },
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+    },
+    headerText: {
+        marginLeft: 10,
+    },
+    greeting: {
+        fontSize: 18,
+        fontWeight: '500',
+    },
+    userName: {
+        fontSize: 16,
+        color: 'gray',
+    },
+    headerRight: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scrollContainer: {
+        paddingBottom: 20,
+    },
     cardContainer: {
-        width: '100%',
-        marginBottom: 20,
-        paddingHorizontal: 10,
+        margin: 16,
     },
     card: {
-        padding: 20,
+        padding: 16,
         borderRadius: 10,
-        elevation: 5, // Elevation for Android
-        shadowColor: '#000', // Shadow for iOS
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10,
     },
     cardTitle: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
     },
     stepsText: {
-        fontSize: 36,
+        fontSize: 48,
         fontWeight: 'bold',
-        textAlign: 'left',
-        marginVertical: 10,
+        marginVertical: 8,
     },
     progressBar: {
-        height: 8,
+        height: 10,
         borderRadius: 5,
-        marginVertical: 10,
+        marginVertical: 8,
     },
     goalText: {
         fontSize: 14,
-        color: colors.gray,
-        textAlign: 'left',
-    },
-    header: {
-        flexDirection: 'column',
-        paddingVertical: 20,
-        paddingHorizontal: 10,
-        alignItems: 'center',
-    },
-    headerDivider: {
-        width: '75%',
-        height: 1,
+        color: 'gray',
     },
 });
 

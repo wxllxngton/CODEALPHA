@@ -7,9 +7,16 @@ import {
     StyleSheet,
     Text,
     View,
-    Button,
+    TouchableOpacity,
 } from 'react-native';
 import SegmentedControlTab from 'react-native-segmented-control-tab';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+    faPlay,
+    faPause,
+    faStop,
+    faClock,
+} from '@fortawesome/free-solid-svg-icons';
 
 // Utils
 import { colors } from '../utils/config';
@@ -17,19 +24,17 @@ import { colors } from '../utils/config';
 // Components
 import LoaderComp from '../components/LoaderComp';
 import { Timer, Countdown } from '../components/TimerComp';
-import CountdownModal from '../components/CountdownModal'; // Importing the CountdownModal
+import CountdownModal from '../components/CountdownModal';
 
 // Redux
 import { useSelector } from 'react-redux';
 import { convertSecondsToTime } from '../utils/helpers';
 
-/**
- * TimerScreen component that allows users to use a timer or countdown feature.
- */
 function TimerScreen() {
     const route = useRoute();
     const user = route.params?.user ?? null;
 
+    const mode = useSelector((state) => state.colorScheme.mode);
     const { schemeTextColor, schemeBackgroundColor } = useSelector(
         (state) => state.colorScheme.scheme
     );
@@ -45,17 +50,36 @@ function TimerScreen() {
     const countdownRef = useRef(null);
     const [isCountdownModalOpen, setIsCountdownModalOpen] = useState(false);
 
-    /**
-     * Renders control buttons for the timer and countdown.
-     * @param {React.Ref} ref - Reference to the Timer or Countdown component.
-     * @returns {JSX.Element} Control buttons.
-     */
     const renderButtons = (ref) => (
-        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-            <Button title="Start" onPress={() => ref.current.start()} />
-            <Button title="Pause" onPress={() => ref.current.pause()} />
-            <Button title="Resume" onPress={() => ref.current.resume()} />
-            <Button title="Stop" onPress={() => ref.current.stop()} />
+        <View style={styles.buttonContainer}>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => ref.current.start()}
+            >
+                <FontAwesomeIcon icon={faPlay} size={20} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Start</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => ref.current.pause()}
+            >
+                <FontAwesomeIcon icon={faPause} size={20} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Pause</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => ref.current.resume()}
+            >
+                <FontAwesomeIcon icon={faPlay} size={20} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Resume</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => ref.current.stop()}
+            >
+                <FontAwesomeIcon icon={faStop} size={20} color="#FFFFFF" />
+                <Text style={styles.buttonText}>Stop</Text>
+            </TouchableOpacity>
         </View>
     );
 
@@ -63,17 +87,27 @@ function TimerScreen() {
         switch (route.key) {
             case 'timer':
                 return (
-                    <View key="timerView">
-                        <Text style={styles.text}>Timer:</Text>
+                    <View key="timerView" style={styles.sceneContainer}>
+                        <Text style={[styles.text, { color: schemeTextColor }]}>
+                            Timer
+                        </Text>
                         <Timer
                             ref={timerRef}
                             style={styles.timer}
-                            textStyle={styles.timerText}
+                            textStyle={[
+                                styles.timerText,
+                                { color: schemeTextColor },
+                            ]}
                             onTimes={setTimerTime}
                             onPause={() => {}}
                             onEnd={() => setTimerTime(0)}
                         />
-                        <Text style={styles.timerDisplay}>
+                        <Text
+                            style={[
+                                styles.timerDisplay,
+                                { color: schemeTextColor },
+                            ]}
+                        >
                             {convertSecondsToTime(timerTime)}
                         </Text>
                         {renderButtons(timerRef)}
@@ -81,25 +115,44 @@ function TimerScreen() {
                 );
             case 'countdown':
                 return (
-                    <View key="countdownView">
-                        <Text style={styles.text}>Countdown:</Text>
+                    <View key="countdownView" style={styles.sceneContainer}>
+                        <Text style={[styles.text, { color: schemeTextColor }]}>
+                            Countdown
+                        </Text>
                         <Countdown
                             ref={countdownRef}
                             style={styles.timer}
-                            textStyle={styles.timerText}
+                            textStyle={[
+                                styles.timerText,
+                                { color: schemeTextColor },
+                            ]}
                             initialSeconds={countdownTime}
                             onTimes={setCountdownTime}
                             onPause={() => {}}
                             onEnd={() => setCountdownTime(0)}
                         />
-                        <Text style={styles.timerDisplay}>
+                        <Text
+                            style={[
+                                styles.timerDisplay,
+                                { color: schemeTextColor },
+                            ]}
+                        >
                             {convertSecondsToTime(countdownTime)}
                         </Text>
                         {renderButtons(countdownRef)}
-                        <Button
-                            title="Set Countdown Time"
+                        <TouchableOpacity
+                            style={styles.setTimeButton}
                             onPress={() => setIsCountdownModalOpen(true)}
-                        />
+                        >
+                            <FontAwesomeIcon
+                                icon={faClock}
+                                size={20}
+                                color="#FFFFFF"
+                            />
+                            <Text style={styles.buttonText}>
+                                Set Countdown Time
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 );
             default:
@@ -114,18 +167,24 @@ function TimerScreen() {
                 { backgroundColor: schemeBackgroundColor },
             ]}
         >
-            {/* Loader Component */}
             <LoaderComp enabled={loading} />
-
-            {/* StatusBar Component */}
             <StatusBar translucent />
 
-            <View style={{ width: '75%' }}>
+            <View style={styles.content}>
                 <SegmentedControlTab
                     values={routes.map((route) => route.title)}
                     selectedIndex={index}
                     onTabPress={setIndex}
-                    tabStyle={{ backgroundColor: schemeBackgroundColor }}
+                    tabStyle={[
+                        styles.tabStyle,
+                        { backgroundColor: schemeBackgroundColor },
+                    ]}
+                    activeTabStyle={styles.activeTabStyle}
+                    tabTextStyle={[
+                        styles.tabTextStyle,
+                        { color: schemeTextColor },
+                    ]}
+                    activeTabTextStyle={styles.activeTabTextStyle}
                 />
 
                 {renderScene({ route: routes[index] })}
@@ -138,6 +197,7 @@ function TimerScreen() {
                     setCountdownTime(totalSeconds);
                     setIsCountdownModalOpen(false);
                 }}
+                isDarkMode={mode === 'dark'}
             />
         </SafeAreaView>
     );
@@ -147,15 +207,35 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    },
+    content: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingHorizontal: 20,
+    },
+    tabStyle: {
+        borderColor: colors.primary,
+        borderWidth: 1,
+    },
+    activeTabStyle: {
+        backgroundColor: colors.primary,
+    },
+    tabTextStyle: {
+        fontSize: 16,
+    },
+    activeTabTextStyle: {
+        color: '#FFFFFF',
+    },
+    sceneContainer: {
+        width: '100%',
+        alignItems: 'center',
+        marginTop: 20,
     },
     text: {
         fontWeight: 'bold',
-        fontSize: 16,
-        marginTop: 40,
-        textAlign: 'center',
-        color: colors.white,
+        fontSize: 24,
+        marginBottom: 20,
     },
     timer: {
         marginVertical: 10,
@@ -163,14 +243,45 @@ const styles = StyleSheet.create({
     },
     timerText: {
         fontSize: 20,
-        textAlign: 'center',
-        color: colors.white,
     },
     timerDisplay: {
-        fontSize: 24,
-        textAlign: 'center',
-        color: colors.white,
-        marginVertical: 10,
+        fontSize: 48,
+        fontWeight: 'bold',
+        marginVertical: 20,
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        marginTop: 20,
+    },
+    button: {
+        width: '45%',
+        backgroundColor: colors.primary,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        margin: 5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
+    },
+    setTimeButton: {
+        backgroundColor: colors.secondary,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+        marginTop: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 

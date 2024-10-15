@@ -430,9 +430,9 @@ function SignupScreen({ navigation }) {
                                                     styles.submitBtn,
                                                     {
                                                         backgroundColor:
-                                                            schemeBackgroundColor,
-                                                        borderColor:
                                                             schemeTextColor,
+                                                        borderColor:
+                                                            schemeBackgroundColor,
                                                     },
                                                 ]}
                                             >
@@ -440,7 +440,7 @@ function SignupScreen({ navigation }) {
                                                     style={[
                                                         styles.submitBtnText,
                                                         {
-                                                            color: schemeTextColor,
+                                                            color: schemeBackgroundColor,
                                                         },
                                                     ]}
                                                 >
@@ -459,9 +459,9 @@ function SignupScreen({ navigation }) {
                                                     styles.backBtn,
                                                     {
                                                         backgroundColor:
-                                                            schemeBackgroundColor,
-                                                        borderColor:
                                                             schemeTextColor,
+                                                        borderColor:
+                                                            schemeBackgroundColor,
                                                     },
                                                 ]}
                                             >
@@ -469,7 +469,7 @@ function SignupScreen({ navigation }) {
                                                     style={[
                                                         styles.backBtnText,
                                                         {
-                                                            color: schemeTextColor,
+                                                            color: schemeBackgroundColor,
                                                         },
                                                     ]}
                                                 >
@@ -514,6 +514,7 @@ const styles = StyleSheet.create({
     },
     inputStyle: {
         height: 45,
+        // borderRadius: 20,
         borderWidth: 1,
         padding: 10,
         paddingHorizontal: 20,
@@ -546,7 +547,8 @@ const styles = StyleSheet.create({
     submitBtn: {
         padding: 15,
         borderWidth: 1,
-        borderRadius: 20,
+        // borderRadius: 20,
+        marginTop: 10,
         marginBottom: 10,
     },
     submitBtnText: {
@@ -556,7 +558,7 @@ const styles = StyleSheet.create({
     backBtn: {
         padding: 15,
         borderWidth: 1,
-        borderRadius: 20,
+        // borderRadius: 20,
     },
     backBtnText: {
         textAlign: 'center',

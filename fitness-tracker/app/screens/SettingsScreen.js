@@ -149,7 +149,7 @@ function SettingsScreen({ navigation }) {
                             onPress={() =>
                                 handleButtonNavigation(
                                     navigation,
-                                    'App',
+                                    'Utils',
                                     'ChangePin'
                                 )
                             }
@@ -194,7 +194,7 @@ function SettingsScreen({ navigation }) {
                                 handleButtonNavigation(
                                     navigation,
                                     'Utils',
-                                    'Settings'
+                                    'FAQ'
                                 )
                             }
                         >
